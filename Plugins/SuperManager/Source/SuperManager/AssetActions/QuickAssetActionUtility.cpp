@@ -2,11 +2,10 @@
 
 
 #include "QuickAssetActionUtility.h"
+#include "DebugHeader.h"
 
 void UQuickAssetActionUtility::TestFunc()
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 8.0f, FColor::Green, TEXT("QuickAssetActionUtility TestFunc"));
-	}
+	PrintDebugMessageOnScreen(TEXT("QuickAssetActionUtility TestFunc"));
+	PrintInLog(TEXT("QuickAssetActionUtility TestFunc"));
 }
