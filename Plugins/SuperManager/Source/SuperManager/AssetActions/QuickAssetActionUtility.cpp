@@ -10,11 +10,16 @@ void UQuickAssetActionUtility::DuplicateAssets(int32 NumOfDuplicates)
 {
 	if (NumOfDuplicates <= 0)
 	{
-		PrintInLog(TEXT("Please provide a valid number of duplicates as parameter."));
+		auto UserChoice = ShowMessageDialog(TEXT("Please provide a valid number of duplicates as parameter."), EAppMsgType::Ok);
+		if (UserChoice != EAppReturnType::Yes)
+		{
+			
+		}
+		// PrintInLog(TEXT("Please provide a valid number of duplicates as parameter."));
 		return;
 	}
 	TArray<FAssetData> SelectedAssetsData = UEditorUtilityLibrary::GetSelectedAssetData();
-	uint32 Counter = 0;
+	uint32 CounterOfSucceededDuplication = 0;
 	for (const FAssetData& SelectedAssetData : SelectedAssetsData)
 	{
 		for (int32 i = 0; i < NumOfDuplicates; i++)
@@ -27,9 +32,13 @@ void UQuickAssetActionUtility::DuplicateAssets(int32 NumOfDuplicates)
 			if (UEditorAssetLibrary::DuplicateAsset(SourceAssetPath, NewPathName))
 			{
 				UEditorAssetLibrary::SaveAsset(NewPathName, false);
-				++Counter;
+				++CounterOfSucceededDuplication;
 			}
 		}
 	}
-	PrintInLog(TEXT("Successfully duplicated ") + FString::FromInt(Counter) + TEXT(" files"));
+	if (CounterOfSucceededDuplication > 0)
+	{
+		ShowNotifyInfo(TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" files"));
+		PrintInLog(TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" files"));	
+	}
 }

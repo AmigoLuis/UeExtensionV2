@@ -1,4 +1,8 @@
 #pragma once
+#include "Framework/Notifications/NotificationManager.h"
+#include "Misc/MessageDialog.h"
+#include "Widgets/Notifications/SNotificationList.h"
+
 namespace SuperManager
 {
 	enum ELogLevel : uint8
@@ -68,9 +72,9 @@ inline void PrintInLog(const FString& Message, SuperManager::ELogLevel LogLevelL
 
 
 inline void PrintDebugMessageOnScreen(const FString& Message,
-							   const FColor& Color = FColor::Green,
-							   const float TimeToDisplay = 8.0f,
-							   const int32 Key = -1)
+                                      const FColor& Color = FColor::Green,
+                                      const float TimeToDisplay = 8.0f,
+                                      const int32 Key = -1)
 {
 	if (GEngine)
 	{
@@ -80,4 +84,27 @@ inline void PrintDebugMessageOnScreen(const FString& Message,
 	{
 		PrintInLog(FString::Printf(TEXT("GEngine is nullptr in Function:%s"), TEXT(__FUNCTION__)));
 	}
+}
+
+inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const EAppMsgType::Type MsgType,
+                                              const bool bShowMessageAsWarning = true)
+{
+	if (bShowMessageAsWarning)
+	{
+		const FText MsgTitle = FText::FromString(TEXT("Warning about Duplicate Assets"));
+		return FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
+	}
+	else
+	{
+		return FMessageDialog::Open(MsgType, FText::FromString(Message));
+	}
+}
+
+inline void ShowNotifyInfo(const FString& Message)
+{
+	FNotificationInfo Info(FText::FromString(Message));
+	Info.bUseLargeFont = true;
+	Info.FadeOutDuration = 5.0f;
+	Info.FadeInDuration = 1.0f;
+	FSlateNotificationManager::Get().AddNotification(Info);
 }
