@@ -10,10 +10,10 @@ void UQuickAssetActionUtility::DuplicateAssets(int32 NumOfDuplicates)
 {
 	if (NumOfDuplicates <= 0)
 	{
-		auto UserChoice = ShowMessageDialog(TEXT("Please provide a valid number of duplicates as parameter."), EAppMsgType::Ok);
+		auto UserChoice = ShowMessageDialog(
+			TEXT("Please provide a valid number of duplicates as parameter."), EAppMsgType::Ok);
 		if (UserChoice != EAppReturnType::Yes)
 		{
-			
 		}
 		// PrintInLog(TEXT("Please provide a valid number of duplicates as parameter."));
 		return;
@@ -38,8 +38,10 @@ void UQuickAssetActionUtility::DuplicateAssets(int32 NumOfDuplicates)
 	}
 	if (CounterOfSucceededDuplication > 0)
 	{
-		ShowNotifyInfo(TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));
-		PrintInLog(TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));	
+		ShowNotifyInfo(
+			TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));
+		PrintInLog(
+			TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));
 	}
 }
 
@@ -50,7 +52,7 @@ void UQuickAssetActionUtility::AutoAddPrefixes()
 	for (const auto SelectedAsset : SelectedAssets)
 	{
 		if (!SelectedAsset) continue;
-		const auto PrefixFound= AssetTypeToPrefixMapping.Find(SelectedAsset->GetClass());
+		const auto PrefixFound = AssetTypeToPrefixMapping.Find(SelectedAsset->GetClass());
 		if (!PrefixFound || PrefixFound->IsEmpty())
 		{
 			ShowMessageDialog(TEXT("Failed to find Prefix for class: ") + SelectedAsset->GetClass()->GetName());
@@ -59,9 +61,11 @@ void UQuickAssetActionUtility::AutoAddPrefixes()
 		FString OldName = SelectedAsset->GetName();
 		if (OldName.StartsWith(*PrefixFound))
 		{
-			ShowMessageDialog(TEXT("Prefix already exists in asset name: ") + OldName);
+			ShowMessageDialog(
+				FString::Format(TEXT("Prefix {0} already exists in asset name: {1}"), {*PrefixFound, OldName}));
 			continue;
 		}
+		SpecialProcessAssetName(SelectedAsset, OldName);
 		const FString NewName = *PrefixFound + OldName;
 		UEditorUtilityLibrary::RenameAsset(SelectedAsset, NewName);
 		++CounterOfSucceededAdding;
@@ -69,5 +73,15 @@ void UQuickAssetActionUtility::AutoAddPrefixes()
 	if (CounterOfSucceededAdding > 0)
 	{
 		ShowNotifyInfo(TEXT("Successfully renamed ") + FString::FromInt(CounterOfSucceededAdding) + TEXT(" assets"));
+	}
+}
+
+void UQuickAssetActionUtility::SpecialProcessAssetName(const UObject* Asset, FString& OldAssetName)
+{
+	if (Asset == nullptr) return;
+	if (Asset->IsA<UMaterialInstanceConstant>())
+	{
+		OldAssetName.RemoveFromStart(TEXT("M_"));
+		OldAssetName.RemoveFromEnd(TEXT("_inst"));
 	}
 }

@@ -25,8 +25,8 @@ public:
 	void DuplicateAssets(int32 NumOfDuplicates);
 	UFUNCTION(CallInEditor, Category = "SuperManager")
 	void AutoAddPrefixes();
-
 private:
+	static void SpecialProcessAssetName(const UObject* Asset, FString& OldAssetName);
 	/**
 	 * 
 	 */
