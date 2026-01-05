@@ -86,7 +86,7 @@ inline void PrintDebugMessageOnScreen(const FString& Message,
 	}
 }
 
-inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const EAppMsgType::Type MsgType,
+inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const EAppMsgType::Type MsgType = EAppMsgType::Ok,
                                               const bool bShowMessageAsWarning = true)
 {
 	if (bShowMessageAsWarning)
