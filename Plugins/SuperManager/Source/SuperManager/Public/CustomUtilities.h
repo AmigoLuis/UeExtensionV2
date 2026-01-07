@@ -1,0 +1,88 @@
+#pragma once
+#include "DebugHeader.h"
+
+static FString GetModuleLoadFailureReason(const EModuleLoadResult Result)
+{
+	switch (Result)
+	{
+	case EModuleLoadResult::Success: return TEXT("Module loaded successfully.");
+	case EModuleLoadResult::FileNotFound: return TEXT("The specified module file could not be found.");
+	case EModuleLoadResult::FileIncompatible: return TEXT(
+			"The specified module file is incompatible with the module system.");
+	case EModuleLoadResult::CouldNotBeLoadedByOS: return TEXT("The operating system failed to load the module file.");
+	case EModuleLoadResult::FailedToInitialize: return TEXT("Module initialization failed.");
+	case EModuleLoadResult::NotLoadedByGameThread: return TEXT(
+			"A thread attempted to load the module before the Game thread did.");
+	default: return TEXT("Unknown error");
+	}
+}
+
+template <typename T>
+static FString GetTypeNameInTemplate()
+{
+#ifdef _MSC_VER
+	FString FuncSig = ANSI_TO_TCHAR(__FUNCSIG__);
+
+	// 查找 "GetTypeNameInTemplate<" 的位置
+	if (int32 StartPos = FuncSig.Find(TEXT("GetTypeNameInTemplate<")); StartPos != INDEX_NONE)
+	{
+		StartPos += 22; // 跳过 "GetTypeNameInTemplate<"
+
+		// 查找对应的'>'
+		int32 Depth = 1;
+		int32 CurrentPos = StartPos;
+		int32 EndPos = INDEX_NONE;
+
+		for (; CurrentPos < FuncSig.Len(); ++CurrentPos)
+		{
+			if (const TCHAR Ch = FuncSig[CurrentPos]; Ch == TEXT('<'))
+				Depth++;
+			else if (Ch == TEXT('>'))
+			{
+				Depth--;
+				if (Depth == 0)
+				{
+					EndPos = CurrentPos;
+					break;
+				}
+			}
+		}
+
+		if (EndPos != INDEX_NONE)
+		{
+			return FuncSig.Mid(StartPos, EndPos - StartPos);
+		}
+	}
+#elif
+	return "only supported in _MSC_VER.";
+#endif
+	return "unknown error.";
+}
+
+template <typename TModuleInterface>
+static const TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
+{
+	EModuleLoadResult OutFailureReason;
+	const TModuleInterface* AssetRegistryModulePtr = static_cast<TModuleInterface*>(
+		FModuleManager::Get().LoadModuleWithFailureReason(InModuleName, OutFailureReason));
+	if (!AssetRegistryModulePtr)
+	{
+		PrintInLog(
+			FString::Format(
+				TEXT("Failed to load module. module name: {0} ,module ptr type: {1}. Failure Reason: {3}."),
+				{
+					*InModuleName.ToString(), GetTypeNameInTemplate<TModuleInterface>(),
+					GetModuleLoadFailureReason(OutFailureReason)
+				}),
+				SuperManager::ELogLevel::Fatal);
+	}
+	else
+	{
+		PrintInLog(
+			FString::Format(
+				TEXT("Successfully loaded module. module name: {0} ,module ptr type: {1}."), {
+					*InModuleName.ToString(), GetTypeNameInTemplate<TModuleInterface>()
+				}));
+	}
+	return AssetRegistryModulePtr;
+}
