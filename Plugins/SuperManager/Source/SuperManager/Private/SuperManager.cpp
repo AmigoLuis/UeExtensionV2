@@ -45,11 +45,11 @@ TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtender(const TArray<FSt
 	if (SelectedPaths.Num() > 0)
 	{
 		MenuExtender->AddMenuExtension(
-			FName("Delete"),// 这个是要附着的按钮，不是新按钮本身 （没解决）
-			EExtensionHook::After, 
+			FName("Delete"), // 这个是要附着的按钮，不是新按钮本身 （没解决）
+			EExtensionHook::After,
 			TSharedPtr<FUICommandList>(),
 			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddCBMenuEntry)
-			);
+		);
 	}
 	return MenuExtender;
 }
@@ -62,7 +62,7 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 		FText::FromString(TEXT("Delete all unused assets under selected folder")),
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked)
-		);
+	);
 	MenuBuilder.AddMenuEntry
 	(
 		FText::FromString(TEXT("Delete empty folders")),
@@ -81,26 +81,27 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 		return;
 	}
 	const FString& CurrentSelectedFolder = SelectedFolders[0];
-	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") + 
-		CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__), 
-		SuperManager::ELogLevel::Display);
+	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") +
+	           CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__),
+	           SuperManager::ELogLevel::Display);
 	TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
 	if (AssetPaths.IsEmpty())
 	{
-		ShowMessageDialog(TEXT("No assets found under the selected folder:") 
-			+ CurrentSelectedFolder + TEXT("."), false);
+		ShowMessageDialog(TEXT("No assets found under the selected folder:")
+		                  + CurrentSelectedFolder + TEXT("."), false);
 		return;
 	}
-	
+
 	if (ShowMessageDialog(
-		FString::FromInt(AssetPaths.Num()) + 
-		TEXT(" assets found under the selected folder:") + CurrentSelectedFolder + 
+		FString::FromInt(AssetPaths.Num()) +
+		TEXT(" assets found under the selected folder:") + CurrentSelectedFolder +
 		TEXT(".\n Still proceed to delete unused assets among them?")
 		, true, EAppMsgType::YesNo
-		) == EAppReturnType::No) return;
-	
+	) == EAppReturnType::No)
+		return;
+
 	FixUpRedirectors();
-	
+
 	TArray<FAssetData> UnusedAssetsData;
 	for (const FString& AssetPath : AssetPaths)
 	{
@@ -113,7 +114,7 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 
 		UnusedAssetsData.Add(UEditorAssetLibrary::FindAssetData(AssetPath));
 	}
-	
+
 	if (!UnusedAssetsData.IsEmpty())
 	{
 		ObjectTools::DeleteAssets(UnusedAssetsData);
