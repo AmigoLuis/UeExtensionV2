@@ -80,13 +80,15 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 	auto AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
 	if (AssetPaths.IsEmpty())
 	{
-		ShowMessageDialog(TEXT("No assets found under the selected folder."));
+		ShowMessageDialog(TEXT("No assets found under the selected folder:") 
+			+ CurrentSelectedFolder + TEXT("."), false);
 		return;
 	}
 	
 	if (ShowMessageDialog(
 		FString::FromInt(AssetPaths.Num()) + 
-		TEXT(" assets found under the selected folder.\n Still proceed to delete unused assets among them?")
+		TEXT(" assets found under the selected folder:") + CurrentSelectedFolder + 
+		TEXT(".\n Still proceed to delete unused assets among them?")
 		, true, EAppMsgType::YesNo
 		) == EAppReturnType::No) return;
 	
@@ -96,7 +98,10 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 	for (const auto& AssetPath : AssetPaths)
 	{
 		// 忽略ue内部的路径
-		if (AssetPath.Contains("Developers") || AssetPath.Contains("Collections")) continue;
+		if (AssetPath.Contains("Developers") 
+			|| AssetPath.Contains("Collections")
+			|| AssetPath.Contains("__ExternalActors__")
+			|| AssetPath.Contains("__ExternalObjects__")) continue;
 		// 忽略不存在的路径
 		if (!UEditorAssetLibrary::DoesAssetExist(AssetPath)) continue;
 		// 忽略存在包引用的资产
@@ -111,7 +116,7 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 	}
 	else
 	{
-		ShowMessageDialog(TEXT("No unused assets found under the selected folder."));
+		ShowMessageDialog(TEXT("No unused assets found under the selected folder."), false);
 	}
 }
 
