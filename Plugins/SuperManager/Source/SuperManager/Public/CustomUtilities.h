@@ -116,3 +116,11 @@ inline void FixUpRedirectors()
 	if (!AssetToolsModule) return;
 	AssetToolsModule->Get().FixupReferencers(RedirectorsToFix);
 }
+
+inline bool IsUnrealProtectedPath(const FString& Path)
+{
+	return Path.Contains("Developers") 
+			|| Path.Contains("Collections")
+			|| Path.Contains("__ExternalActors__")
+			|| Path.Contains("__ExternalObjects__");
+}

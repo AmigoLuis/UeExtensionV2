@@ -18,5 +18,6 @@ private:
 	TSharedRef<FExtender> CustomCBMenuExtender(const TArray<FString>& SelectedPaths);
 	void AddCBMenuEntry(FMenuBuilder& MenuBuilder);
 	void OnDeleteUnusedAssetsButtonClicked();
+	void OnDeleteEmptyFoldersButtonClicked();
 #pragma endregion ContentBrowserMenuExtention
 };
