@@ -4,6 +4,7 @@
 
 #include "ContentBrowserModule.h"
 #include "CustomUtilities.h"
+#include "DebugHeader.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -63,6 +64,7 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 
 void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 {
+	LOG_ENTER_FUNCTION();
 }
 
 #pragma endregion ContentBrowserMenuExtention

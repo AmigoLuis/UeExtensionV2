@@ -52,7 +52,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGamePlugin, Log, All);
 	Now.GetYear(), Now.GetMonth(), Now.GetDay(),\
 	Now.GetHour(), Now.GetMinute(), Now.GetSecond(),\
 	Now.GetMillisecond(), ThreadID, *ThreadName, *Message
-inline void PrintInLogNoUse(const FString& Message, const SuperManager::ELogLevel LogLevelLocal = SuperManager::ELogLevel::Warning)
+inline void PrintInLogNoUse(const FString& Message, 
+	const SuperManager::ELogLevel LogLevelLocal = SuperManager::ELogLevel::Warning)
 {
 	const FDateTime Now = FDateTime::UtcNow(); // 使用UTC时间避免时区问题
 	// 获取当前线程id
@@ -86,7 +87,8 @@ inline void PrintInLogNoUse(const FString& Message, const SuperManager::ELogLeve
 }
 // 留下这个注释以做警示，后续搞一个功能之前，一定一定要查一下有没有已经存在的功能！！
 #define M_LOCAL_LOG_PARAMS TEXT("%s"), *Message
-inline void PrintInLog(const FString& Message, const SuperManager::ELogLevel LogLevelLocal = SuperManager::ELogLevel::Warning)
+inline void PrintInLog(const FString& Message, 
+	const SuperManager::ELogLevel LogLevelLocal = SuperManager::ELogLevel::Warning)
 {
 	switch (LogLevelLocal)
 	{
@@ -113,6 +115,9 @@ inline void PrintInLog(const FString& Message, const SuperManager::ELogLevel Log
 		break;
 	}
 }
+
+#define LOG_ENTER_FUNCTION() \
+PrintInLog(TEXT("Entered Function: ") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Display);
 
 inline void PrintDebugMessageOnScreen(const FString& Message,
                                       const FColor& Color = FColor::Green,
