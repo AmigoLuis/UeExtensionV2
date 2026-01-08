@@ -60,10 +60,10 @@ static FString GetTypeNameInTemplate()
 }
 
 template <typename TModuleInterface>
-static const TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
+static TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 {
 	EModuleLoadResult OutFailureReason;
-	const TModuleInterface* AssetRegistryModulePtr = static_cast<TModuleInterface*>(
+	TModuleInterface* AssetRegistryModulePtr = static_cast<TModuleInterface*>(
 		FModuleManager::Get().LoadModuleWithFailureReason(InModuleName, OutFailureReason));
 	if (!AssetRegistryModulePtr)
 	{

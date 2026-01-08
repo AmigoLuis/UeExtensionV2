@@ -100,7 +100,7 @@ void UQuickAssetActionUtility::RemoveUnusedAssets()
 		ShowMessageDialog(TEXT("Failed to find unused assets"), false);
 		return;
 	}
-	int32 NumOfAssetsDeleted = ObjectTools::DeleteAssets(UnusedAssetsData);
+	const int32 NumOfAssetsDeleted = ObjectTools::DeleteAssets(UnusedAssetsData);
 	if (NumOfAssetsDeleted <= 0) return;
 	ShowNotifyInfo(TEXT("Successfully deleted unused ") + FString::FromInt(NumOfAssetsDeleted) + TEXT(" assets"));
 }
