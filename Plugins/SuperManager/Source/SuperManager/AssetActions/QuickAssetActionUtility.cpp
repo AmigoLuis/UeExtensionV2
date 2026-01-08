@@ -3,13 +3,11 @@
 
 #include "QuickAssetActionUtility.h"
 
-#include "AssetToolsModule.h"
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 
 void UQuickAssetActionUtility::DuplicateAssets(const int32 NumOfDuplicates)
 {
@@ -111,42 +109,4 @@ void UQuickAssetActionUtility::SpecialProcessAssetName(const UObject* Asset, FSt
 		OldAssetName.RemoveFromStart(TEXT("M_"));
 		OldAssetName.RemoveFromEnd(TEXT("_inst"));
 	}
-}
-
-void UQuickAssetActionUtility::FixUpRedirectors()
-{
-	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<
-		FAssetRegistryModule>(TEXT("AssetRegistry"));
-	if (!AssetRegistryModulePtr) return;
-
-	FARFilter Filter;
-	Filter.bRecursivePaths = true;
-	Filter.PackagePaths.Emplace("/Game");
-	// Filter.ClassNames.Emplace(TEXT("ObjectRedirectors"));
-	// // 方法1：使用 FTopLevelAssetPath 构造函数
-	Filter.ClassPaths.Emplace(FTopLevelAssetPath(TEXT("/Script/CoreUObject"), TEXT("ObjectRedirector")));
-	//
-	// // 方法2：使用 FromString
-	// Filter.ClassPaths.Emplace(FTopLevelAssetPath::FromString(TEXT("/Script/CoreUObject.ObjectRedirector")));
-	//
-	// // 方法3：从UClass转换（推荐）
-	// Filter.ClassPaths.Emplace(UObjectRedirector::StaticClass()->GetClassPathName());
-
-	TArray<FAssetData> OutRedirectors;
-	AssetRegistryModulePtr->Get().GetAssets(Filter, OutRedirectors);
-
-	TArray<UObjectRedirector*> RedirectorsToFix;
-	for (const FAssetData& RedirectorAssetData : OutRedirectors)
-	{
-		if (UObjectRedirector* RedirectorToFix = Cast<UObjectRedirector>(RedirectorAssetData.GetAsset()))
-		{
-			RedirectorsToFix.Add(RedirectorToFix);
-		}
-	}
-	// const FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<
-	// 	FAssetToolsModule>(TEXT("AssetTools"));
-	// AssetToolsModule.Get().FixupReferencers(RedirectorsToFix);
-	const FAssetToolsModule* AssetToolsModule = LoadModulePtrWithLog<FAssetToolsModule>(TEXT("AssetTools"));
-	if (!AssetToolsModule) return;
-	AssetToolsModule->Get().FixupReferencers(RedirectorsToFix);
 }

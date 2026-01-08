@@ -29,7 +29,6 @@ public:
 	static void RemoveUnusedAssets();
 private:
 	static void SpecialProcessAssetName(const UObject* Asset, FString& OldAssetName);
-	static void FixUpRedirectors();
 	
 	/**
 	 * 
