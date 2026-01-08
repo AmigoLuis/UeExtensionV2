@@ -44,8 +44,6 @@ void UQuickAssetActionUtility::DuplicateAssets(const int32 NumOfDuplicates)
 	{
 		ShowNotifyInfo(
 			TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));
-		PrintInLog(
-			TEXT("Successfully duplicated ") + FString::FromInt(CounterOfSucceededDuplication) + TEXT(" assets"));
 	}
 }
 

@@ -82,7 +82,8 @@ static TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 			FString::Format(
 				TEXT("Successfully loaded module. module name: {0} ,module ptr type: {1}."), {
 					*InModuleName.ToString(), GetTypeNameInTemplate<TModuleInterface>()
-				}));
+				}),
+				SuperManager::ELogLevel::Display);
 	}
 	return AssetRegistryModulePtr;
 }

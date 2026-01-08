@@ -42,9 +42,14 @@ namespace SuperManager
 		VeryVerbose
 	};
 }
+// 获取任意符号的字符串（无法用于模板）
+#define SYMBOL_NAME_STR(x) #x
+
 // 定义日志类别
 DECLARE_LOG_CATEGORY_EXTERN(LogGamePlugin, Log, All);
 #define M_CUSTOM_LOG_CATEGORY LogGamePlugin
+
+#pragma region WarningAndLearning 
 // 被deepseek忽悠了半天，写这个日志打印线程号、时间的功能，因为在ue控制台没看到，结果后面发现在Saved/Logs下面的日志文件，打开后里面每一条日志都有时间、线程号，等于白写，
 // 留下这个注释以做警示，后续搞一个功能之前，一定一定要查一下有没有已经存在的功能！！
 // 留下这个注释以做警示，后续搞一个功能之前，一定一定要查一下有没有已经存在的功能！！
@@ -85,6 +90,8 @@ inline void PrintInLogNoUse(const FString& Message,
 		break;
 	}
 }
+#pragma endregion WarningAndLearning
+
 // 留下这个注释以做警示，后续搞一个功能之前，一定一定要查一下有没有已经存在的功能！！
 #define M_LOCAL_LOG_PARAMS TEXT("%s"), *Message
 inline void PrintInLog(const FString& Message, 
@@ -119,6 +126,9 @@ inline void PrintInLog(const FString& Message,
 #define LOG_ENTER_FUNCTION() \
 PrintInLog(TEXT("Entered Function: ") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Display);
 
+#define LOG_NULL_PTR(PTR) \
+PrintInLog(TEXT(SYMBOL_NAME_STR(PTR)) TEXT(" is nullptr in Function:") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Error);
+
 inline void PrintDebugMessageOnScreen(const FString& Message,
                                       const FColor& Color = FColor::Green,
                                       const float TimeToDisplay = 8.0f,
@@ -130,8 +140,9 @@ inline void PrintDebugMessageOnScreen(const FString& Message,
 	}
 	else
 	{
-		PrintInLog(FString::Printf(TEXT("GEngine is nullptr in Function:%s"), TEXT(__FUNCTION__)));
+		LOG_NULL_PTR(GEngine);
 	}
+	PrintInLog(Message, SuperManager::Display);
 }
 
 inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const bool bShowMessageAsWarning = true,
@@ -140,10 +151,12 @@ inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const bool
 	if (bShowMessageAsWarning)
 	{
 		const FText MsgTitle = FText::FromString(TEXT("Warning about Duplicate Assets"));
+		PrintInLog(Message);
 		return FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
 	}
 	else
 	{
+		PrintInLog(Message, SuperManager::Display);
 		return FMessageDialog::Open(MsgType, FText::FromString(Message));
 	}
 }
@@ -154,5 +167,6 @@ inline void ShowNotifyInfo(const FString& Message)
 	Info.bUseLargeFont = true;
 	Info.FadeOutDuration = 5.0f;
 	Info.FadeInDuration = 1.0f;
+	PrintInLog(Message, SuperManager::Display);
 	FSlateNotificationManager::Get().AddNotification(Info);
 }
