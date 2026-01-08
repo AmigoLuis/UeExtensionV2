@@ -13,6 +13,7 @@ public:
 	virtual void ShutdownModule() override;
 private:
 #pragma region ContentBrowserMenuExtention 
+	TArray<FString> SelectedFolders;
 	void InitCBMenuExtension();
 	TSharedRef<FExtender> CustomCBMenuExtender(const TArray<FString>& SelectedPaths);
 	void AddCBMenuEntry(FMenuBuilder& MenuBuilder);

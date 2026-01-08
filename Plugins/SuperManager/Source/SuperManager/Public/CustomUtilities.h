@@ -1,7 +1,9 @@
 #pragma once
+#include "AssetToolsModule.h"
 #include "DebugHeader.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
-static FString GetModuleLoadFailureReason(const EModuleLoadResult Result)
+inline FString GetModuleLoadFailureReason(const EModuleLoadResult Result)
 {
 	switch (Result)
 	{
@@ -18,7 +20,7 @@ static FString GetModuleLoadFailureReason(const EModuleLoadResult Result)
 }
 
 template <typename T>
-static FString GetTypeNameInTemplate()
+FString GetTypeNameInTemplate()
 {
 #ifdef _MSC_VER
 	FString FuncSig = ANSI_TO_TCHAR(__FUNCSIG__);
@@ -60,7 +62,7 @@ static FString GetTypeNameInTemplate()
 }
 
 template <typename TModuleInterface>
-static TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
+TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 {
 	EModuleLoadResult OutFailureReason;
 	TModuleInterface* AssetRegistryModulePtr = static_cast<TModuleInterface*>(
@@ -86,4 +88,31 @@ static TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 				SuperManager::ELogLevel::Display);
 	}
 	return AssetRegistryModulePtr;
+}
+
+inline void FixUpRedirectors()
+{
+	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<
+		FAssetRegistryModule>(TEXT("AssetRegistry"));
+	if (!AssetRegistryModulePtr) return;
+
+	FARFilter Filter;
+	Filter.bRecursivePaths = true;
+	Filter.PackagePaths.Emplace(TEXT("/Game"));
+	Filter.ClassPaths.Emplace(UObjectRedirector::StaticClass()->GetClassPathName());
+
+	TArray<FAssetData> OutRedirectors;
+	AssetRegistryModulePtr->Get().GetAssets(Filter, OutRedirectors);
+
+	TArray<UObjectRedirector*> RedirectorsToFix;
+	for (const FAssetData& RedirectorAssetData : OutRedirectors)
+	{
+		if (UObjectRedirector* RedirectorToFix = Cast<UObjectRedirector>(RedirectorAssetData.GetAsset()))
+		{
+			RedirectorsToFix.Add(RedirectorToFix);
+		}
+	}
+	const FAssetToolsModule* AssetToolsModule = LoadModulePtrWithLog<FAssetToolsModule>(TEXT("AssetTools"));
+	if (!AssetToolsModule) return;
+	AssetToolsModule->Get().FixupReferencers(RedirectorsToFix);
 }

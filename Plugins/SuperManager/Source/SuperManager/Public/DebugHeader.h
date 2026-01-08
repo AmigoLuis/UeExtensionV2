@@ -43,7 +43,7 @@ namespace SuperManager
 	};
 }
 // 获取任意符号的字符串（无法用于模板）
-#define SYMBOL_NAME_STR(x) #x
+#define SYMBOL_NAME_TEXT(x) TEXT(#x)
 
 // 定义日志类别
 DECLARE_LOG_CATEGORY_EXTERN(LogGamePlugin, Log, All);
@@ -127,7 +127,7 @@ inline void PrintInLog(const FString& Message,
 PrintInLog(TEXT("Entered Function: ") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Display);
 
 #define LOG_NULL_PTR(PTR) \
-PrintInLog(TEXT(SYMBOL_NAME_STR(PTR)) TEXT(" is nullptr in Function:") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Error);
+PrintInLog(SYMBOL_NAME_TEXT(PTR) TEXT(" is nullptr in Function:") TEXT(__FUNCTION__) TEXT("."), SuperManager::ELogLevel::Error);
 
 inline void PrintDebugMessageOnScreen(const FString& Message,
                                       const FColor& Color = FColor::Green,
@@ -148,17 +148,19 @@ inline void PrintDebugMessageOnScreen(const FString& Message,
 inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const bool bShowMessageAsWarning = true,
                                               const EAppMsgType::Type MsgType = EAppMsgType::Ok)
 {
+	EAppReturnType::Type AppReturnType;
 	if (bShowMessageAsWarning)
 	{
-		const FText MsgTitle = FText::FromString(TEXT("Warning about Duplicate Assets"));
-		PrintInLog(Message);
-		return FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
+		const FText MsgTitle = FText::FromString(TEXT("Warning"));
+		AppReturnType = FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
+		PrintInLog(Message + TEXT("User selected:") + LexToString(AppReturnType));
 	}
 	else
 	{
-		PrintInLog(Message, SuperManager::Display);
-		return FMessageDialog::Open(MsgType, FText::FromString(Message));
+		AppReturnType = FMessageDialog::Open(MsgType, FText::FromString(Message));
+		PrintInLog(Message + TEXT("User selected:") + LexToString(AppReturnType), SuperManager::Display);
 	}
+	return AppReturnType;
 }
 
 inline void ShowNotifyInfo(const FString& Message)

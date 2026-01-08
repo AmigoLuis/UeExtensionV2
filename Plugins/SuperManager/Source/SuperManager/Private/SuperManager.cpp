@@ -5,6 +5,8 @@
 #include "ContentBrowserModule.h"
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
+#include "EditorAssetLibrary.h"
+#include "ObjectTools.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -39,6 +41,7 @@ void FSuperManagerModule::InitCBMenuExtension()
 TSharedRef<FExtender> FSuperManagerModule::CustomCBMenuExtender(const TArray<FString>& SelectedPaths)
 {
 	TSharedRef<FExtender> MenuExtender(new FExtender());
+	SelectedFolders = SelectedPaths;
 	if (SelectedPaths.Num() > 0)
 	{
 		MenuExtender->AddMenuExtension(
@@ -65,6 +68,51 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	if (SelectedFolders.Num() > 1)
+	{
+		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."));
+		return;
+	}
+	const FString& CurrentSelectedFolder = SelectedFolders[0];
+	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") + 
+		CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__), 
+		SuperManager::ELogLevel::Display);
+	auto AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
+	if (AssetPaths.IsEmpty())
+	{
+		ShowMessageDialog(TEXT("No assets found under the selected folder."));
+		return;
+	}
+	
+	if (ShowMessageDialog(
+		FString::FromInt(AssetPaths.Num()) + 
+		TEXT(" assets found under the selected folder.\n Still proceed to delete unused assets among them?")
+		, true, EAppMsgType::YesNo
+		) == EAppReturnType::No) return;
+	
+	FixUpRedirectors();
+	
+	TArray<FAssetData> UnusedAssetsData;
+	for (const auto& AssetPath : AssetPaths)
+	{
+		// 忽略ue内部的路径
+		if (AssetPath.Contains("Developers") || AssetPath.Contains("Collections")) continue;
+		// 忽略不存在的路径
+		if (!UEditorAssetLibrary::DoesAssetExist(AssetPath)) continue;
+		// 忽略存在包引用的资产
+		if (!UEditorAssetLibrary::FindPackageReferencersForAsset(AssetPath).IsEmpty()) continue;
+
+		UnusedAssetsData.Add(UEditorAssetLibrary::FindAssetData(AssetPath));
+	}
+	
+	if (!UnusedAssetsData.IsEmpty())
+	{
+		ObjectTools::DeleteAssets(UnusedAssetsData);
+	}
+	else
+	{
+		ShowMessageDialog(TEXT("No unused assets found under the selected folder."));
+	}
 }
 
 #pragma endregion ContentBrowserMenuExtention
