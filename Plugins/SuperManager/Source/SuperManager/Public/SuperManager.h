@@ -20,6 +20,7 @@ private:
 	void OnDeleteUnusedAssetsButtonClicked();
 	void OnDeleteEmptyFoldersButtonClicked();
 	void OnAdvancedDeleteButtonClicked();
+	TArray<TSharedPtr<FAssetData>> GetUnusedAssetDataUnderSelectedFolder();
 #pragma endregion ContentBrowserMenuExtention
 	
 #pragma region CustomEditorTab

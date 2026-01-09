@@ -7,6 +7,7 @@
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
+#include "SlateWidget/AdvancedDeletionWidget.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -85,7 +86,7 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
-	if (SelectedFolders.Num() > 1)
+	if (SelectedFolders.Num() != 1)
 	{
 		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
 		return;
@@ -138,7 +139,7 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
-	if (SelectedFolders.Num() > 1)
+	if (SelectedFolders.Num() != 1)
 	{
 		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
 		return;
@@ -206,10 +207,51 @@ void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
 	FGlobalTabmanager::Get()->TryInvokeTab(FTabId(AdvancedDeletionTabID));
 }
 
+TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetUnusedAssetDataUnderSelectedFolder()
+{
+	TArray<TSharedPtr<FAssetData>> UnusedAssetsData;
+	if (SelectedFolders.Num() != 1)
+	{
+		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
+		return UnusedAssetsData;
+	}
+	const FString& CurrentSelectedFolder = SelectedFolders[0];
+	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") +
+			   CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__),
+			   SuperManager::ELogLevel::Display);
+	TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
+	if (AssetPaths.IsEmpty())
+	{
+		ShowMessageDialog(TEXT("No assets found under the selected folder:")
+						  + CurrentSelectedFolder + TEXT("."), false);
+		return UnusedAssetsData;
+	}
+	FixUpRedirectors();
+
+	for (const FString& AssetPath : AssetPaths)
+	{
+		// 忽略ue内部的路径
+		if (IsUnrealProtectedPath(AssetPath)) continue;
+		// 忽略不存在的路径
+		if (!UEditorAssetLibrary::DoesAssetExist(AssetPath)) continue;
+		// 忽略存在包引用的资产
+		if (!UEditorAssetLibrary::FindPackageReferencersForAsset(AssetPath).IsEmpty()) continue;
+
+		UnusedAssetsData.Emplace(MakeShared<FAssetData>(UEditorAssetLibrary::FindAssetData(AssetPath)));
+	}
+	
+	if (UnusedAssetsData.IsEmpty())
+	{
+		ShowMessageDialog(TEXT("No unused assets found under the selected folder.")
+						  + CurrentSelectedFolder + TEXT("."), false);
+	}
+	return UnusedAssetsData;
+}
+
 #pragma endregion ContentBrowserMenuExtention
 
 #pragma region CustomEditorTab
-const TCHAR* FSuperManagerModule::AdvancedDeletionTabID = TEXT("AdvancedDeletion");
+const TCHAR* FSuperManagerModule::AdvancedDeletionTabID = TEXT("Advanced Deletion");
 
 void FSuperManagerModule::RegisterAdvancedDeletionTab()
 {
@@ -221,6 +263,9 @@ void FSuperManagerModule::RegisterAdvancedDeletionTab()
 
 TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	return SNew(SDockTab).TabRole(NomadTab);
+	return SNew(SDockTab).TabRole(NomadTab)
+		[
+			SNew(SAdvancedDeletionWidget).UnusedAssetsDataToStore(GetUnusedAssetDataUnderSelectedFolder())
+		];
 }
 #pragma endregion CustomEditorTab
