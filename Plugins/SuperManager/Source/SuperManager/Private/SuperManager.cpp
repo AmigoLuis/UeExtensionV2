@@ -63,12 +63,21 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked)
 	);
+	
 	MenuBuilder.AddMenuEntry
 	(
 		FText::FromString(TEXT("Delete empty folders")),
-		FText::FromString(TEXT("Delete all empty folders under selected folders")),
+		FText::FromString(TEXT("Delete all empty folders under selected folder")),
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
+	);
+	
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Advanced delete")),
+		FText::FromString(TEXT("Advanced delete empty folders and unused assets under selected folder")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnAdvancedDeleteButtonClicked)
 	);
 }
 
@@ -187,6 +196,13 @@ void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 	{
 		ShowMessageDialog(FString::FromInt(DeletedFoldersCounter) + TEXT(" empty folders have been deleted."), false);
 	}
+}
+
+void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
+{
+	// AdvanceDelete
+	LOG_ENTER_FUNCTION();
+	
 }
 
 #pragma endregion ContentBrowserMenuExtention
