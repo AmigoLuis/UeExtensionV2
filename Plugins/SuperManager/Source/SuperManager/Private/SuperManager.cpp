@@ -14,6 +14,7 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitCBMenuExtension();
+	RegisterAdvancedDeletionTab();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -202,7 +203,24 @@ void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
 {
 	// AdvanceDelete
 	LOG_ENTER_FUNCTION();
-	
+	FGlobalTabmanager::Get()->TryInvokeTab(FTabId(AdvancedDeletionTabID));
 }
 
 #pragma endregion ContentBrowserMenuExtention
+
+#pragma region CustomEditorTab
+const TCHAR* FSuperManagerModule::AdvancedDeletionTabID = TEXT("AdvancedDeletion");
+
+void FSuperManagerModule::RegisterAdvancedDeletionTab()
+{
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(AdvancedDeletionTabID,
+	                                                  FOnSpawnTab::CreateRaw(
+		                                                  this, &FSuperManagerModule::FOnSpawnAdvancedDeletionTab)).
+	                          SetDisplayName(FText::FromString(AdvancedDeletionTabID));
+}
+
+TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
+{
+	return SNew(SDockTab).TabRole(NomadTab);
+}
+#pragma endregion CustomEditorTab

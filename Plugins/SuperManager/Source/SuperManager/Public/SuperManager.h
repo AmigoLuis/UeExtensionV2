@@ -21,4 +21,10 @@ private:
 	void OnDeleteEmptyFoldersButtonClicked();
 	void OnAdvancedDeleteButtonClicked();
 #pragma endregion ContentBrowserMenuExtention
+	
+#pragma region CustomEditorTab
+	void RegisterAdvancedDeletionTab();
+	static const TCHAR* AdvancedDeletionTabID;
+	TSharedRef<SDockTab> FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs);
+#pragma endregion CustomEditorTab
 };
