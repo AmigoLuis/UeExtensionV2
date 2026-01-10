@@ -17,10 +17,11 @@ public:
 	
 private:
 	TArray<TSharedPtr<FAssetData>> StoredUnusedAssetsData;
-	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetDataToDisplay,
+	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
 	                                            const TSharedRef<STableViewBase>& OwnerTable);
 	TSharedRef<SCheckBox> CreateCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay);
 	TSharedRef<STextBlock> CreateTextBlock(const FString& TextToDisplay, const FSlateFontInfo& TextFont);
+	TSharedRef<SButton> CreateDeletionButton(const TSharedPtr<FAssetData>& AssetDataToDelete);
 	void OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData);
 	static FSlateFontInfo GetEmbossedTextFont();
 };

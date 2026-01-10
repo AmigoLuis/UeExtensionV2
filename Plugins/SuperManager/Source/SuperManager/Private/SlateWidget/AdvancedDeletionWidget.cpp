@@ -48,31 +48,35 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 	];
 }
 
-TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetDataToDisplay,
+TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
                                                                      const TSharedRef<STableViewBase>& OwnerTable)
 {
 	
 	FSlateFontInfo AssetClassTextFont = GetEmbossedTextFont();
 	AssetClassTextFont.Size = 10;
-	return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable)
+	return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable).Padding(FMargin(3.0f))
 		[
 			SNew(SHorizontalBox)
 			// 1 checkbox
 			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Center).FillWidth(0.05f)
 			[
-				CreateCheckBox(AssetDataToDisplay)
+				CreateCheckBox(AssetData)
 			]
 			// 2 asset class name
-			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Fill).FillWidth(0.2f)
+			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Fill).FillWidth(0.4f)
 			[
-				CreateTextBlock(AssetDataToDisplay->AssetClassPath.GetAssetName().ToString(), AssetClassTextFont)
+				CreateTextBlock(AssetData->AssetClassPath.GetAssetName().ToString(), AssetClassTextFont)
 			]
 			// 3 asset name
-			+ SHorizontalBox::Slot()
+			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Fill)
 			[
-				CreateTextBlock(AssetDataToDisplay->AssetName.ToString(), AssetClassTextFont)
+				CreateTextBlock(AssetData->AssetName.ToString(), AssetClassTextFont)
 			]
 			// 4 delete button
+			+ SHorizontalBox::Slot().HAlign(HAlign_Right).VAlign(VAlign_Fill)//.FillWidth(0.2f)
+			[
+				CreateDeletionButton(AssetData)
+			]
 		];
 }
 
@@ -93,6 +97,16 @@ TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateTextBlock(const FString& T
 		.Font(TextFont)
 		// .Justification(ETextJustify::Center)
 		.ColorAndOpacity(FColor::White);
+}
+
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeletionButton(const TSharedPtr<FAssetData>& AssetDataToDelete)
+{
+	return SNew(SButton).Text(FText::FromString(TEXT("DeleteAsset"))).OnClicked_Lambda([AssetDataToDelete]
+		{
+			PrintInLog(AssetDataToDelete->AssetName.ToString() + TEXT(" is deleted."),
+				SuperManager::Display);
+			return FReply::Handled();
+		});
 }
 
 void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData)
