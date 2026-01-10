@@ -20,6 +20,8 @@ private:
 	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetDataToDisplay,
 	                                            const TSharedRef<STableViewBase>& OwnerTable);
 	TSharedRef<SCheckBox> CreateCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay);
+	TSharedRef<STextBlock> CreateTextBlock(const FString& TextToDisplay, const FSlateFontInfo& TextFont);
 	void OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData);
+	static FSlateFontInfo GetEmbossedTextFont();
 };
 

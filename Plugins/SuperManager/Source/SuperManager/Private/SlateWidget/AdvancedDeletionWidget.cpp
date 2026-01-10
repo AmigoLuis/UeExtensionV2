@@ -8,8 +8,7 @@
 void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 {
 	bCanSupportFocus = true;
-
-	FSlateFontInfo TitleTextFont = FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
+	FSlateFontInfo TitleTextFont = GetEmbossedTextFont();
 	TitleTextFont.Size = 30;
 
 	StoredUnusedAssetsData = InArgs._UnusedAssetsDataToStore;
@@ -52,6 +51,9 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetDataToDisplay,
                                                                      const TSharedRef<STableViewBase>& OwnerTable)
 {
+	
+	FSlateFontInfo AssetClassTextFont = GetEmbossedTextFont();
+	AssetClassTextFont.Size = 10;
 	return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable)
 		[
 			SNew(SHorizontalBox)
@@ -61,11 +63,14 @@ TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<
 				CreateCheckBox(AssetDataToDisplay)
 			]
 			// 2 asset class name
-			
+			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Fill).FillWidth(0.2f)
+			[
+				CreateTextBlock(AssetDataToDisplay->AssetClassPath.GetAssetName().ToString(), AssetClassTextFont)
+			]
 			// 3 asset name
 			+ SHorizontalBox::Slot()
 			[
-				SNew(STextBlock).Text(FText::FromString(AssetDataToDisplay->AssetName.ToString()))
+				CreateTextBlock(AssetDataToDisplay->AssetName.ToString(), AssetClassTextFont)
 			]
 			// 4 delete button
 		];
@@ -78,6 +83,16 @@ TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateCheckBox(const TSharedPtr<F
 		.OnCheckStateChanged(this, &SAdvancedDeletionWidget::OnCheckBoxStateChanged, AssetDataToDisplay)
 		.Visibility(EVisibility::Visible);
 	return CreatedCheckBox;
+}
+
+TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateTextBlock(const FString& TextToDisplay,
+                                                                const FSlateFontInfo& TextFont)
+{
+	return SNew(STextBlock)
+		.Text(FText::FromString(TextToDisplay))
+		.Font(TextFont)
+		// .Justification(ETextJustify::Center)
+		.ColorAndOpacity(FColor::White);
 }
 
 void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData)
@@ -97,4 +112,8 @@ void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unknown."), SuperManager::Display);
 		break;
 	}
+}
+FSlateFontInfo SAdvancedDeletionWidget::GetEmbossedTextFont()
+{
+	return FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
 }
