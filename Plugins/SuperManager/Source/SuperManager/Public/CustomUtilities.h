@@ -125,12 +125,65 @@ inline bool IsUnrealProtectedPath(const FString& Path)
 			|| Path.Contains("__ExternalActors__")
 			|| Path.Contains("__ExternalObjects__");
 }
+inline TArray<TSharedPtr<FAssetData>> FilteredOutDeletedAssetsData(
+	const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete, const int32 DeletedAssetsNum)
+{
+	TArray<TSharedPtr<FAssetData>> AssetsDataAlreadyDeleted;
+	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<
+		FAssetRegistryModule>(TEXT("AssetRegistry"));
+	if (!AssetRegistryModulePtr) return AssetsDataAlreadyDeleted;
+	TArray<FName> AssetsNameNotDeleted, AssetsNameAlreadyDeleted;
+	FAssetData EmptyAssetData;
+	for (const TSharedPtr<FAssetData>& AssetDataToDelete : AssetsDataToDelete)
+	{
+		if (AssetsDataToDelete.Num() == DeletedAssetsNum + AssetsNameNotDeleted.Num())
+		{
+			// 全部资产已删除
+			AssetsNameAlreadyDeleted.Add(AssetDataToDelete->AssetName);
+			AssetsDataAlreadyDeleted.Add(AssetDataToDelete);
+			continue;
+		}
+		// 这个用于判断资产是否存在的函数没有经过测试（TryGetAssetByObjectPath）
+		if (AssetRegistryModulePtr->TryGetAssetByObjectPath(AssetDataToDelete->GetSoftObjectPath(), EmptyAssetData) !=
+			UE::AssetRegistry::EExists::DoesNotExist)
+		{
+			// 添加到没有删除的集合中（状态不是不存在的都视为删除失败）
+			AssetsNameNotDeleted.Add(AssetDataToDelete->AssetName);
+		}
+		else
+		{
+			AssetsNameAlreadyDeleted.Add(AssetDataToDelete->AssetName);
+			AssetsDataAlreadyDeleted.Add(AssetDataToDelete);
+		}
+	}
 
+	// 低级别日志记录哪些删除成功
+	for (FName AssetNameAlreadyDeleted : AssetsNameAlreadyDeleted)
+	{
+		PrintInLog(TEXT("Asset: \"") + AssetNameAlreadyDeleted.ToString() + TEXT("\" is deleted."),
+				   SuperManager::Display);
+	}
+	// 如果没有全部删除，就展示哪些没有删除成功
+	if (!AssetsNameNotDeleted.IsEmpty())
+	{
+		FString DeleteAssetsInfo(TEXT("Failed to delete "));
+		DeleteAssetsInfo.Append(FString::FromInt(AssetsNameNotDeleted.Num())).Append(
+			TEXT(" Assets, Listed below:\n"));
+		for (FName AssetDataNotDeleted : AssetsNameNotDeleted)
+		{
+			DeleteAssetsInfo.Append(AssetDataNotDeleted.ToString()).Append(TEXT("\n"));
+		}
+		// 如果没有全部删除，就是警告级别
+		ShowMessageDialog(DeleteAssetsInfo, true);
+	}
+	return AssetsDataAlreadyDeleted;
+} 
 inline int32 DeleteAssetsAndLog(const TArray<FAssetData>& AssetsDataToDelete)
 {
 	const int32 DeletedAssetsNum = ObjectTools::DeleteAssets(AssetsDataToDelete);
 	PrintInLog(TEXT("Deleted ") + FString::FromInt(DeletedAssetsNum) + TEXT(" Assets."),
 				SuperManager::Display);
+	FixUpRedirectors();
 	return DeletedAssetsNum;
 } 
 
@@ -141,6 +194,11 @@ inline int32 DeleteAssetsAndLog(const FAssetData& AssetDataToDelete)
 	{
 		PrintInLog(AssetDataToDelete.AssetName.ToString() + TEXT(" is deleted."),
 SuperManager::Display);
+	}
+	else
+	{
+		PrintInLog(TEXT("Failed to delete asset :") + AssetDataToDelete.AssetName.ToString() + TEXT("."),
+SuperManager::Error);
 	}
 	return DeletedAssetsNum;
 } 
