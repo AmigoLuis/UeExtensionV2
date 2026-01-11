@@ -3,6 +3,7 @@
 
 #include "SlateWidget/AdvancedDeletionWidget.h"
 
+#include "CustomUtilities.h"
 #include "DebugHeader.h"
 
 void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
@@ -35,9 +36,7 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 			SNew(SScrollBox)
 			+ SScrollBox::Slot()
 			[
-				SNew(SListView<TSharedPtr<FAssetData>>)
-				.ListItemsSource(&StoredUnusedAssetsData)
-				.OnGenerateRow(this, &SAdvancedDeletionWidget::OnGenerateListViewRow)
+				CreateListViewForAssets(StoredUnusedAssetsData)
 			]
 		]
 		
@@ -51,7 +50,6 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
                                                                      const TSharedRef<STableViewBase>& OwnerTable)
 {
-	
 	FSlateFontInfo AssetClassTextFont = GetEmbossedTextFont();
 	AssetClassTextFont.Size = 10;
 	return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable).Padding(FMargin(3.0f))
@@ -101,12 +99,16 @@ TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateTextBlock(const FString& T
 
 TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeletionButton(const TSharedPtr<FAssetData>& AssetDataToDelete)
 {
-	return SNew(SButton).Text(FText::FromString(TEXT("DeleteAsset"))).OnClicked_Lambda([AssetDataToDelete]
-		{
-			PrintInLog(AssetDataToDelete->AssetName.ToString() + TEXT(" is deleted."),
-				SuperManager::Display);
-			return FReply::Handled();
-		});
+	TSharedRef<SButton> DeletionButton = SNew(SButton).Text(FText::FromString(TEXT("DeleteAsset"))).OnClicked_Lambda(
+			[AssetDataToDelete, this]
+			{
+				if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
+				{
+					UpdateAssetsListView(AssetDataToDelete);
+				}
+				return FReply::Handled();
+			});
+	return DeletionButton;
 }
 
 void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData)
@@ -130,4 +132,27 @@ void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 FSlateFontInfo SAdvancedDeletionWidget::GetEmbossedTextFont()
 {
 	return FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
+}
+
+TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateListViewForAssets(
+	const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay)
+{
+	TSharedRef<SListView<TSharedPtr<FAssetData>>> ListView =
+		SNew(SListView<TSharedPtr<FAssetData>>)
+		.ListItemsSource(&AssetDataToDisplay)
+		.OnGenerateRow(this, &SAdvancedDeletionWidget::OnGenerateListViewRow);
+	AssetsListView = ListView.ToSharedPtr();
+	return ListView;
+}
+
+void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>& AssetDataDeleted)
+{
+	if (!StoredUnusedAssetsData.IsEmpty())
+	{
+		StoredUnusedAssetsData.Remove(AssetDataDeleted);
+	}
+	if (AssetsListView.IsValid())
+	{
+		AssetsListView->RequestListRefresh();
+	}
 }

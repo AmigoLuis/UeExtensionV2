@@ -6,7 +6,6 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
-#include "ObjectTools.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
@@ -128,7 +127,7 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 
 	if (!UnusedAssetsData.IsEmpty())
 	{
-		ObjectTools::DeleteAssets(UnusedAssetsData);
+		DeleteAssetsAndLog(UnusedAssetsData);
 	}
 	else
 	{

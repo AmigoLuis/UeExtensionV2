@@ -24,5 +24,8 @@ private:
 	TSharedRef<SButton> CreateDeletionButton(const TSharedPtr<FAssetData>& AssetDataToDelete);
 	void OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData);
 	static FSlateFontInfo GetEmbossedTextFont();
+	TSharedRef<SListView<TSharedPtr<FAssetData>>> CreateListViewForAssets(const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay);
+	TSharedPtr<SListView<TSharedPtr<FAssetData>>> AssetsListView;
+	void UpdateAssetsListView(const TSharedPtr<FAssetData>& AssetDataDeleted);
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "AssetToolsModule.h"
 #include "DebugHeader.h"
+#include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
 inline FString GetModuleLoadFailureReason(const EModuleLoadResult Result)
@@ -124,3 +125,22 @@ inline bool IsUnrealProtectedPath(const FString& Path)
 			|| Path.Contains("__ExternalActors__")
 			|| Path.Contains("__ExternalObjects__");
 }
+
+inline int32 DeleteAssetsAndLog(const TArray<FAssetData>& AssetsDataToDelete)
+{
+	const int32 DeletedAssetsNum = ObjectTools::DeleteAssets(AssetsDataToDelete);
+	PrintInLog(TEXT("Deleted ") + FString::FromInt(DeletedAssetsNum) + TEXT(" Assets."),
+				SuperManager::Display);
+	return DeletedAssetsNum;
+} 
+
+inline int32 DeleteAssetsAndLog(const FAssetData& AssetDataToDelete)
+{
+	const int32 DeletedAssetsNum =  DeleteAssetsAndLog(TArray{AssetDataToDelete});
+	if (DeletedAssetsNum > 0)
+	{
+		PrintInLog(AssetDataToDelete.AssetName.ToString() + TEXT(" is deleted."),
+SuperManager::Display);
+	}
+	return DeletedAssetsNum;
+} 
