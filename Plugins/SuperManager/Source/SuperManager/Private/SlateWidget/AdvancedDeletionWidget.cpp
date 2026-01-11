@@ -27,7 +27,7 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 		]
 		
 		+ SVerticalBox::Slot().AutoHeight()
-		[
+		[ // 资产展示列表
 			SNew(SHorizontalBox)
 		]
 		
@@ -41,12 +41,40 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 		]
 		
 		+ SVerticalBox::Slot().AutoHeight()
-		[
+		[ // 资产批量操作按钮
 			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
+			[
+				CreateDeleteAllAssetButton(StoredUnusedAssetsData)
+			]
+			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
+			[
+				CreateSelectAllAssetButton(StoredUnusedAssetsData)
+			]
+			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
+			[
+				CreateDeselectAllAssetButton(StoredUnusedAssetsData)
+			]
 		]
 	];
 }
 
+TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateTextBlock(const FString& TextToDisplay,
+                                                                const FSlateFontInfo& TextFont)
+{
+	return SNew(STextBlock)
+		.Text(FText::FromString(TextToDisplay))
+		.Font(TextFont)
+		// .Justification(ETextJustify::Center)
+		.ColorAndOpacity(FColor::White);
+}
+
+FSlateFontInfo SAdvancedDeletionWidget::GetEmbossedTextFont()
+{
+	return FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
+}
+
+#pragma region AssetsList
 TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
                                                                      const TSharedRef<STableViewBase>& OwnerTable)
 {
@@ -58,7 +86,7 @@ TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<
 			// 1 checkbox
 			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Center).FillWidth(0.05f)
 			[
-				CreateCheckBox(AssetData)
+				CreateAssetSelectCheckBox(AssetData)
 			]
 			// 2 asset class name
 			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Fill).FillWidth(0.4f)
@@ -73,12 +101,12 @@ TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<
 			// 4 delete button
 			+ SHorizontalBox::Slot().HAlign(HAlign_Right).VAlign(VAlign_Fill)//.FillWidth(0.2f)
 			[
-				CreateDeletionButton(AssetData)
+				CreateDeleteOneAssetButton(AssetData)
 			]
 		];
 }
 
-TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay)
+TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateAssetSelectCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay)
 {
 	TSharedRef<SCheckBox> CreatedCheckBox = SNew(SCheckBox)
 		.Type(ESlateCheckBoxType::Type::CheckBox)
@@ -87,17 +115,7 @@ TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateCheckBox(const TSharedPtr<F
 	return CreatedCheckBox;
 }
 
-TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateTextBlock(const FString& TextToDisplay,
-                                                                const FSlateFontInfo& TextFont)
-{
-	return SNew(STextBlock)
-		.Text(FText::FromString(TextToDisplay))
-		.Font(TextFont)
-		// .Justification(ETextJustify::Center)
-		.ColorAndOpacity(FColor::White);
-}
-
-TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeletionButton(const TSharedPtr<FAssetData>& AssetDataToDelete)
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeleteOneAssetButton(const TSharedPtr<FAssetData>& AssetDataToDelete)
 {
 	TSharedRef<SButton> DeletionButton = SNew(SButton).Text(FText::FromString(TEXT("DeleteAsset"))).OnClicked_Lambda(
 			[AssetDataToDelete, this]
@@ -124,14 +142,10 @@ void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 	case ECheckBoxState::Undetermined:
 		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is undetermined."), SuperManager::Display);
 		break;
-		default:
+	default:
 		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unknown."), SuperManager::Display);
 		break;
 	}
-}
-FSlateFontInfo SAdvancedDeletionWidget::GetEmbossedTextFont()
-{
-	return FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
 }
 
 TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateListViewForAssets(
@@ -156,3 +170,73 @@ void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>&
 		AssetsListView->RequestListRefresh();
 	}
 }
+#pragma endregion AssetsList
+#pragma region AssetsBatchActions
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeleteAllAssetButton(
+	const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete)
+{
+	const TCHAR* ActionName = TEXT("DeleteAllAssets");
+	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(FMargin(5.0f))
+		.OnClicked_Lambda(
+			[ActionName, this]
+			{
+				// if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
+				// {
+				// 	UpdateAssetsListView(AssetDataToDelete);
+				// }
+				PrintInLog(ActionName, SuperManager::Display);
+				return FReply::Handled();
+			});
+	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return DeleteAllAssetButton;
+}
+
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateSelectAllAssetButton(
+	const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete)
+{
+	const TCHAR* ActionName = TEXT("SelectAllAssets");
+	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(5.0f)
+		.OnClicked_Lambda(
+			[ActionName, this]
+			{
+				// if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
+				// {
+				// 	UpdateAssetsListView(AssetDataToDelete);
+				// }
+				PrintInLog(ActionName, SuperManager::Display);
+				return FReply::Handled();
+			});
+	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return DeleteAllAssetButton;
+}
+
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeselectAllAssetButton(
+	const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete)
+{
+	const TCHAR* ActionName = TEXT("DeselectAllAssets");
+	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(5.0f)
+		.OnClicked_Lambda(
+			[ActionName, this]
+			{
+				// if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
+				// {
+				// 	UpdateAssetsListView(AssetDataToDelete);
+				// }
+				PrintInLog(ActionName, SuperManager::Display);
+				return FReply::Handled();
+			});
+	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return DeleteAllAssetButton;
+}
+
+TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateAssetsBatchActionButtonsTextBlock(const FString& TextToDisplay)
+{
+	FSlateFontInfo AssetsBatchActionButtonsTextFont = GetEmbossedTextFont();
+	AssetsBatchActionButtonsTextFont.Size = 20;
+	return SNew(STextBlock)
+		.Text(FText::FromString(TextToDisplay))
+		.Font(AssetsBatchActionButtonsTextFont)
+		.Justification(ETextJustify::Center)
+		.ColorAndOpacity(FColor::White);
+}
+#pragma endregion AssetsBatchActions
