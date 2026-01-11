@@ -34,9 +34,10 @@ private:
 #pragma endregion AssetsList
 #pragma region AssetsBatchActions
 	static TSharedRef<STextBlock> CreateAssetsBatchActionButtonsTextBlock(const FString& TextToDisplay);
-	TSharedRef<SButton> CreateDeleteAllSelectedAssetButton(const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete);
-	TSharedRef<SButton> CreateSelectAllAssetButton(const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete);
-	TSharedRef<SButton> CreateDeselectAllAssetButton(const TArray<TSharedPtr<FAssetData>>& AssetsDataToDelete);
+	TSharedRef<SButton> CreateDeleteAllSelectedAssetButton();
+	FReply OnDeleteAllSelectedAssetButtonClicked();
+	TSharedRef<SButton> CreateSelectAllAssetButton();
+	TSharedRef<SButton> CreateDeselectAllAssetButton();
 #pragma endregion AssetsBatchActions
 };
 
