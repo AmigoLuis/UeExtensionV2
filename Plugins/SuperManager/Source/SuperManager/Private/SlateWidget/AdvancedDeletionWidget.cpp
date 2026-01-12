@@ -14,11 +14,13 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 
 	StoredUnusedAssetsData = InArgs._UnusedAssetsDataToStore;
 	if (StoredUnusedAssetsData.Num() == 0) return;
+	SelectedAssetsData.Empty();
+	CheckBoxesOfAssets.Empty();
 	
 	ChildSlot[
 		SNew(SVerticalBox)
-		+ SVerticalBox::Slot().AutoHeight() // 标题slot
-		[
+		+ SVerticalBox::Slot().AutoHeight() 
+		[	// 标题slot
 			SNew(STextBlock)
 			.Text(FText::FromString(TEXT("Advance Deletion")))
 			.Font(TitleTextFont)
@@ -27,12 +29,12 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 		]
 		
 		+ SVerticalBox::Slot().AutoHeight()
-		[ // 资产展示列表
+		[	// 资产展示列表
 			SNew(SHorizontalBox)
 		]
 		
 		+ SVerticalBox::Slot().VAlign(VAlign_Fill) 
-		[ // 资产展示列表
+		[	// 资产展示列表
 			SNew(SScrollBox)
 			+ SScrollBox::Slot()
 			[
@@ -41,20 +43,8 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 		]
 		
 		+ SVerticalBox::Slot().AutoHeight()
-		[ // 资产批量操作按钮
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
-			[
-				CreateDeleteAllSelectedAssetButton()
-			]
-			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
-			[
-				CreateSelectAllAssetButton()
-			]
-			+ SHorizontalBox::Slot().Padding(3.0f).FillWidth(10.0f)
-			[
-				CreateDeselectAllAssetButton()
-			]
+		[	// 资产批量操作按钮
+			CreateHorizontalBoxAndBatchAssetActionButtons()
 		]
 	];
 }
@@ -112,6 +102,7 @@ TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateAssetSelectCheckBox(const T
 		.Type(ESlateCheckBoxType::Type::CheckBox)
 		.OnCheckStateChanged(this, &SAdvancedDeletionWidget::OnCheckBoxStateChanged, AssetDataToDisplay)
 		.Visibility(EVisibility::Visible);
+	CheckBoxesOfAssets.Emplace(AssetDataToDisplay,CreatedCheckBox.ToSharedPtr());
 	return CreatedCheckBox;
 }
 
@@ -163,6 +154,11 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateLis
 
 void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>& AssetDataDeleted)
 {
+	// clear deleted asset's checkbox reference before SelectedAssetsData.Remove
+	// because AssetsDataDeleted might be in itself (or StoredUnusedAssetsData)
+	// if u call CheckBoxesOfAssets.Remove after SelectedAssetsData.RemoveAll
+	// u won't be able to find any data to delete cause its already deleted
+	CheckBoxesOfAssets.Remove(AssetDataDeleted);
 	StoredUnusedAssetsData.Remove(AssetDataDeleted);
 	SelectedAssetsData.Remove(AssetDataDeleted);
 	if (AssetsListView.IsValid())
@@ -173,30 +169,68 @@ void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>&
 
 void SAdvancedDeletionWidget::UpdateAssetsListView(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted)
 {
-	auto Contains = [&AssetsDataDeleted](const TSharedPtr<FAssetData>& ArrayElement)
+	// clear all deleted assets' checkbox reference before SelectedAssetsData.RemoveAll
+	// because AssetsDataDeleted might be itself (or StoredUnusedAssetsData)
+	// if u call CheckBoxesOfAssets.Remove after SelectedAssetsData.RemoveAll
+	// u won't be able to find any data to delete cause its already deleted
+	for (const TSharedPtr AssetDataDeleted : AssetsDataDeleted)
+	{
+		// StoredUnusedAssetsData and SelectedAssetsData can't use remove here 
+		// because AssetsDataDeleted might be itself (or StoredUnusedAssetsData)
+		// if u call remove during iterating one TArray, it might crash
+		CheckBoxesOfAssets.Remove(AssetDataDeleted);
+	}
+	auto IsAssetDataDeleted = [&AssetsDataDeleted](const TSharedPtr<FAssetData>& ArrayElement)
 	{
 		return AssetsDataDeleted.Contains(ArrayElement);
 	};
-	StoredUnusedAssetsData.RemoveAll(Contains);
-	SelectedAssetsData.RemoveAll(Contains);
+	StoredUnusedAssetsData.RemoveAll(IsAssetDataDeleted);
+	SelectedAssetsData.RemoveAll(IsAssetDataDeleted);
 	if (AssetsListView.IsValid())
 	{
 		AssetsListView->RequestListRefresh();
 	}
 }
+
 #pragma endregion AssetsList
 #pragma region AssetsBatchActions
+
+TSharedRef<SHorizontalBox> SAdvancedDeletionWidget::CreateHorizontalBoxAndBatchAssetActionButtons()
+{
+	constexpr float BatchAssetActionButtonWidth = 15.0f;
+	constexpr float BatchAssetActionButtonPadding = 3.0f;
+	// 资产批量操作按钮
+	TSharedRef<SHorizontalBox> HorizontalBoxForBatchAssetActions = SNew(SHorizontalBox)
+	+ SHorizontalBox::Slot().Padding(BatchAssetActionButtonPadding).FillWidth(BatchAssetActionButtonWidth)
+	[
+		CreateDeleteAllSelectedAssetButton()
+	]
+	+ SHorizontalBox::Slot().Padding(BatchAssetActionButtonPadding).FillWidth(BatchAssetActionButtonWidth)
+	[
+		CreateSelectAllAssetButton()
+	]
+	+ SHorizontalBox::Slot().Padding(BatchAssetActionButtonPadding).FillWidth(BatchAssetActionButtonWidth)
+	[
+		CreateDeselectAllAssetButton()
+	]
+	+ SHorizontalBox::Slot().Padding(BatchAssetActionButtonPadding).FillWidth(BatchAssetActionButtonWidth)
+	[
+		CreateToggleAllAssetButton()
+	];
+	return HorizontalBoxForBatchAssetActions;
+}
 TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeleteAllSelectedAssetButton()
 {
 	LOG_ENTER_FUNCTION();
 	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(FMargin(5.0f))
-		.OnClicked(this, &SAdvancedDeletionWidget::OnDeleteAllSelectedAssetButtonClicked);
-	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(TEXT("Delete All Selected Assets")));
+		.OnClicked(this, &SAdvancedDeletionWidget::OnDeleteAllSelectedAssetsButtonClicked);
+	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(TEXT("Delete Selected Assets")));
 	return DeleteAllAssetButton;
 }
 
-FReply SAdvancedDeletionWidget::OnDeleteAllSelectedAssetButtonClicked()
+FReply SAdvancedDeletionWidget::OnDeleteAllSelectedAssetsButtonClicked()
 {
+	LOG_ENTER_FUNCTION();
 	if (SelectedAssetsData.IsEmpty())
 	{
 		ShowMessageDialog(TEXT("No selected assets."), false);
@@ -224,37 +258,64 @@ FReply SAdvancedDeletionWidget::OnDeleteAllSelectedAssetButtonClicked()
 TSharedRef<SButton> SAdvancedDeletionWidget::CreateSelectAllAssetButton()
 {
 	const TCHAR* ActionName = TEXT("Select All Assets");
-	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(5.0f)
-		.OnClicked_Lambda(
-			[ActionName, this]
-			{
-				// if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
-				// {
-				// 	UpdateAssetsListView(AssetDataToDelete);
-				// }
-				PrintInLog(ActionName, SuperManager::Display);
-				return FReply::Handled();
-			});
-	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
-	return DeleteAllAssetButton;
+	TSharedRef<SButton> SelectAllAssetButton = SNew(SButton).ContentPadding(5.0f)
+		.OnClicked(this, &SAdvancedDeletionWidget::OnSelectAllAssetButtonClicked);
+	SelectAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return SelectAllAssetButton;
+}
+
+FReply SAdvancedDeletionWidget::OnSelectAllAssetButtonClicked()
+{
+	LOG_ENTER_FUNCTION();
+	if (CheckBoxesOfAssets.IsEmpty()) return FReply::Handled();
+	for (const TPair CheckBoxOfAsset : CheckBoxesOfAssets)
+	{
+		// select all unselected
+		if (!CheckBoxOfAsset.Value->IsChecked()) CheckBoxOfAsset.Value->ToggleCheckedState();
+	}
+	return FReply::Handled();
 }
 
 TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeselectAllAssetButton()
 {
 	const TCHAR* ActionName = TEXT("Deselect All Assets");
-	TSharedRef<SButton> DeleteAllAssetButton = SNew(SButton).ContentPadding(5.0f)
-		.OnClicked_Lambda(
-			[ActionName, this]
-			{
-				// if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
-				// {
-				// 	UpdateAssetsListView(AssetDataToDelete);
-				// }
-				PrintInLog(ActionName, SuperManager::Display);
-				return FReply::Handled();
-			});
-	DeleteAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
-	return DeleteAllAssetButton;
+	TSharedRef<SButton> DeselectAllAssetButton = SNew(SButton).ContentPadding(5.0f)
+		.OnClicked(this, &SAdvancedDeletionWidget::OnDeselectAllAssetButtonClicked);
+	DeselectAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return DeselectAllAssetButton;
+}
+
+FReply SAdvancedDeletionWidget::OnDeselectAllAssetButtonClicked()
+{
+	LOG_ENTER_FUNCTION();
+	if (CheckBoxesOfAssets.IsEmpty()) return FReply::Handled();
+	for (const TPair CheckBoxOfAsset : CheckBoxesOfAssets)
+	{
+		// deselect all selected
+		if (CheckBoxOfAsset.Value->IsChecked()) CheckBoxOfAsset.Value->ToggleCheckedState();
+	}
+	return FReply::Handled();
+}
+
+TSharedRef<SButton> SAdvancedDeletionWidget::CreateToggleAllAssetButton()
+{
+	const TCHAR* ActionName = TEXT("Toggle All Assets");
+	TSharedRef<SButton> ToggleAllAssetButton = SNew(SButton).ContentPadding(5.0f)
+		.OnClicked(this, &SAdvancedDeletionWidget::OnToggleAllAssetButtonClicked);
+	ToggleAllAssetButton->SetContent(CreateAssetsBatchActionButtonsTextBlock(ActionName));
+	return ToggleAllAssetButton;
+}
+
+FReply SAdvancedDeletionWidget::OnToggleAllAssetButtonClicked()
+{
+	LOG_ENTER_FUNCTION();
+	if (CheckBoxesOfAssets.IsEmpty()) return FReply::Handled();
+	for (const TPair CheckBoxOfAsset : CheckBoxesOfAssets)
+	{
+		// toggle all selected
+		CheckBoxOfAsset.Value->ToggleCheckedState();
+	}
+	return FReply::Handled();
 }
 
 TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateAssetsBatchActionButtonsTextBlock(const FString& TextToDisplay)

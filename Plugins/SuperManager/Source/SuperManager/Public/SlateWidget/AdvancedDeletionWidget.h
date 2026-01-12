@@ -18,6 +18,7 @@ public:
 private:
 	TArray<TSharedPtr<FAssetData>> StoredUnusedAssetsData;
 	TArray<TSharedPtr<FAssetData>> SelectedAssetsData;
+	TMap<TSharedPtr<FAssetData>, TSharedPtr<SCheckBox>> CheckBoxesOfAssets;
 	static FSlateFontInfo GetEmbossedTextFont();
 	
 #pragma region AssetsList
@@ -33,11 +34,16 @@ private:
 	void UpdateAssetsListView(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted);
 #pragma endregion AssetsList
 #pragma region AssetsBatchActions
+	TSharedRef<SHorizontalBox> CreateHorizontalBoxAndBatchAssetActionButtons();
 	static TSharedRef<STextBlock> CreateAssetsBatchActionButtonsTextBlock(const FString& TextToDisplay);
 	TSharedRef<SButton> CreateDeleteAllSelectedAssetButton();
-	FReply OnDeleteAllSelectedAssetButtonClicked();
+	FReply OnDeleteAllSelectedAssetsButtonClicked();
 	TSharedRef<SButton> CreateSelectAllAssetButton();
+	FReply OnSelectAllAssetButtonClicked();
 	TSharedRef<SButton> CreateDeselectAllAssetButton();
+	FReply OnDeselectAllAssetButtonClicked();
+	TSharedRef<SButton> CreateToggleAllAssetButton();
+	FReply OnToggleAllAssetButtonClicked();
 #pragma endregion AssetsBatchActions
 };
 
