@@ -6,6 +6,8 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 
+#define CONDITION_LIST_ALL_TEXT TEXT("List All Assets")
+
 void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 {
 	bCanSupportFocus = true;
@@ -16,6 +18,8 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 	if (StoredUnusedAssetsData.Num() == 0) return;
 	SelectedAssetsData.Empty();
 	CheckBoxesOfAssets.Empty();
+	
+	AssetListConditionStrings.Add(MakeShared<FString>(CONDITION_LIST_ALL_TEXT));
 	
 	ChildSlot[
 		SNew(SVerticalBox)
@@ -29,8 +33,12 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 		]
 		
 		+ SVerticalBox::Slot().AutoHeight()
-		[	// 资产展示列表
+		[	// 资产列表条件，决定哪些资产会出现在列表中
 			SNew(SHorizontalBox)
+			+ SHorizontalBox::Slot().AutoWidth()
+			[
+				CreateAssetListConditionComboBox()
+			]
 		]
 		
 		+ SVerticalBox::Slot().VAlign(VAlign_Fill) 
@@ -63,6 +71,35 @@ FSlateFontInfo SAdvancedDeletionWidget::GetEmbossedTextFont()
 {
 	return FCoreStyle::Get().GetFontStyle(TEXT("EmbossedText"));
 }
+
+#pragma region AssetListConditionComboBoxes
+TSharedRef<SComboBox<TSharedPtr<FString>>> SAdvancedDeletionWidget::CreateAssetListConditionComboBox()
+{
+	TSharedRef<SComboBox<TSharedPtr<FString>>> AssetListConditionComboBox = 
+		SNew(SComboBox<TSharedPtr<FString>>)
+			.OptionsSource(&AssetListConditionStrings)
+			.OnGenerateWidget(this, &SAdvancedDeletionWidget::OnGenerateAssetListCondition)
+		.OnSelectionChanged(this, &SAdvancedDeletionWidget::OnListConditionSelectionChanged)
+		[
+			SAssignNew(ComboDisplayTextBlock, STextBlock).Text(FText::FromString(TEXT("List Assets Options")))
+		];
+	return AssetListConditionComboBox;
+}
+
+void SAdvancedDeletionWidget::OnListConditionSelectionChanged(TSharedPtr<FString> SelectedListCondition,
+	ESelectInfo::Type InSelectionInfo)
+{
+	PrintInLog(*SelectedListCondition, SuperManager::ELogLevel::Display);
+	ComboDisplayTextBlock->SetText(FText::FromString(*SelectedListCondition));
+}
+
+TSharedRef<SWidget> SAdvancedDeletionWidget::OnGenerateAssetListCondition(
+	TSharedPtr<FString> ListConditionString)
+{
+	return SNew(STextBlock).Text(FText::FromString(*ListConditionString));
+}
+
+#pragma endregion AssetListConditionComboBoxes
 
 #pragma region AssetsList
 TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,

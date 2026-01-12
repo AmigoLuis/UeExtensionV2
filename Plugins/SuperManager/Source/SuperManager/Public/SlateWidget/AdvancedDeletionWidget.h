@@ -21,6 +21,13 @@ private:
 	TMap<TSharedPtr<FAssetData>, TSharedPtr<SCheckBox>> CheckBoxesOfAssets;
 	static FSlateFontInfo GetEmbossedTextFont();
 	
+#pragma region AssetListConditionComboBoxes
+	TSharedRef<SComboBox<TSharedPtr<FString>>> CreateAssetListConditionComboBox();
+	TArray<TSharedPtr<FString>> AssetListConditionStrings;
+	TSharedPtr<STextBlock> ComboDisplayTextBlock;
+	void OnListConditionSelectionChanged(TSharedPtr<FString> SelectedListCondition, ESelectInfo::Type InSelectionInfo);
+TSharedRef<SWidget> OnGenerateAssetListCondition(TSharedPtr<FString> ListConditionString);
+#pragma endregion AssetListConditionComboBoxes
 #pragma region AssetsList
 	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
 	                                            const TSharedRef<STableViewBase>& OwnerTable);
