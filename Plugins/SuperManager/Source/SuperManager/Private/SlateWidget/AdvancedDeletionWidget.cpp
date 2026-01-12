@@ -83,7 +83,7 @@ TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<
 	return SNew(STableRow<TSharedPtr<FAssetData>>, OwnerTable).Padding(FMargin(3.0f))
 		[
 			SNew(SHorizontalBox)
-			// 1 checkbox
+			// 1 select asset checkbox
 			+ SHorizontalBox::Slot().HAlign(HAlign_Left).VAlign(VAlign_Center).FillWidth(0.05f)
 			[
 				CreateAssetSelectCheckBox(AssetData)

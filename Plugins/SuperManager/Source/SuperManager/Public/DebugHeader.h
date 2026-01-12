@@ -46,8 +46,8 @@ namespace SuperManager
 #define SYMBOL_NAME_TEXT(x) TEXT(#x)
 
 // 定义日志类别
-DECLARE_LOG_CATEGORY_EXTERN(LogGamePlugin, Log, All);
-#define M_CUSTOM_LOG_CATEGORY LogGamePlugin
+DECLARE_LOG_CATEGORY_EXTERN(A_LogOfSuperManagerPlugin, Log, All);
+#define M_CUSTOM_LOG_CATEGORY A_LogOfSuperManagerPlugin
 
 #pragma region WarningAndLearning 
 // 被deepseek忽悠了半天，写这个日志打印线程号、时间的功能，因为在ue控制台没看到，结果后面发现在Saved/Logs下面的日志文件，打开后里面每一条日志都有时间、线程号，等于白写，

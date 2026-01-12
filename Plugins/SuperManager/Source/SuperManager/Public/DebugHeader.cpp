@@ -1,3 +1,3 @@
 
 #include "DebugHeader.h"
-DEFINE_LOG_CATEGORY(LogGamePlugin);
+DEFINE_LOG_CATEGORY(A_LogOfSuperManagerPlugin);
