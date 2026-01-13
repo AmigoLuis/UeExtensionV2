@@ -206,13 +206,13 @@ void FSuperManagerModule::OnAdvancedDeleteButtonClicked()
 	FGlobalTabmanager::Get()->TryInvokeTab(FTabId(AdvancedDeletionTabID));
 }
 
-TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetUnusedAssetDataUnderSelectedFolder()
+TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetDataUnderSelectedFolder()
 {
-	TArray<TSharedPtr<FAssetData>> UnusedAssetsData;
+	TArray<TSharedPtr<FAssetData>> AllAssetsData;
 	if (SelectedFolders.Num() != 1)
 	{
 		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
-		return UnusedAssetsData;
+		return AllAssetsData;
 	}
 	const FString& CurrentSelectedFolder = SelectedFolders[0];
 	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") +
@@ -223,7 +223,7 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetUnusedAssetDataUnderSelec
 	{
 		ShowMessageDialog(TEXT("No assets found under the selected folder:")
 						  + CurrentSelectedFolder + TEXT("."), false);
-		return UnusedAssetsData;
+		return AllAssetsData;
 	}
 	FixUpRedirectors();
 
@@ -233,18 +233,16 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetUnusedAssetDataUnderSelec
 		if (IsUnrealProtectedPath(AssetPath)) continue;
 		// 忽略不存在的路径
 		if (!UEditorAssetLibrary::DoesAssetExist(AssetPath)) continue;
-		// 忽略存在包引用的资产
-		if (!UEditorAssetLibrary::FindPackageReferencersForAsset(AssetPath).IsEmpty()) continue;
 
-		UnusedAssetsData.Emplace(MakeShared<FAssetData>(UEditorAssetLibrary::FindAssetData(AssetPath)));
+		AllAssetsData.Emplace(MakeShared<FAssetData>(UEditorAssetLibrary::FindAssetData(AssetPath)));
 	}
 	
-	if (UnusedAssetsData.IsEmpty())
+	if (AllAssetsData.IsEmpty())
 	{
 		ShowMessageDialog(TEXT("No unused assets found under the selected folder.")
 						  + CurrentSelectedFolder + TEXT("."), false);
 	}
-	return UnusedAssetsData;
+	return AllAssetsData;
 }
 
 #pragma endregion ContentBrowserMenuExtention
@@ -264,7 +262,7 @@ TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpa
 {
 	return SNew(SDockTab).TabRole(NomadTab)
 		[
-			SNew(SAdvancedDeletionWidget).UnusedAssetsDataToStore(GetUnusedAssetDataUnderSelectedFolder())
+			SNew(SAdvancedDeletionWidget).AllAssetsDataToStore(GetAllAssetDataUnderSelectedFolder())
 		];
 }
 #pragma endregion CustomEditorTab

@@ -10,15 +10,17 @@
 class SAdvancedDeletionWidget : public SCompoundWidget
 {
 SLATE_BEGIN_ARGS(SAdvancedDeletionWidget){}
-	SLATE_ARGUMENT(TArray<TSharedPtr<FAssetData>>, UnusedAssetsDataToStore)
+	SLATE_ARGUMENT(TArray<TSharedPtr<FAssetData>>, AllAssetsDataToStore)
 SLATE_END_ARGS()
 public:
 	void Construct(const FArguments& InArgs);
 	
 private:
-	TArray<TSharedPtr<FAssetData>> StoredUnusedAssetsData;
-	TArray<TSharedPtr<FAssetData>> SelectedAssetsData;
-	TMap<TSharedPtr<FAssetData>, TSharedPtr<SCheckBox>> CheckBoxesOfAssets;
+	TArray<TSharedPtr<FAssetData>> StoredAllAssetsData;
+	TArray<TSharedPtr<FAssetData>> DisplayedAssetsData;
+	TArray<TSharedPtr<FAssetData>> DisplayedSelectedAssetsData;
+	TArray<TSharedPtr<FAssetData>> UnDisplayedSelectedAssetsData;
+	TMap<TSharedPtr<FAssetData>, TSharedPtr<SCheckBox>> AssetsAndCheckBoxes;
 	static FSlateFontInfo GetEmbossedTextFont();
 	
 #pragma region AssetListConditionComboBoxes

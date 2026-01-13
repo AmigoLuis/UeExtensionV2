@@ -1,6 +1,7 @@
 #pragma once
 #include "AssetToolsModule.h"
 #include "DebugHeader.h"
+#include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
@@ -178,6 +179,24 @@ inline TArray<TSharedPtr<FAssetData>> FilteredOutDeletedAssetsData(
 	}
 	return AssetsDataAlreadyDeleted;
 } 
+
+// 过滤出不存在包引用的资产
+inline void FilteredOutUnusedAssetsData(
+	const TArray<TSharedPtr<FAssetData>>& AllAssetsDataToFilter, 
+	TArray<TSharedPtr<FAssetData>>& FilterOutUnusedAssetsData)
+{
+	if (AllAssetsDataToFilter.IsEmpty()) return;
+	FilterOutUnusedAssetsData.Empty();
+	for (TSharedPtr AssetDataToFilter : AllAssetsDataToFilter)
+	{
+		// 过滤出不存在包引用的资产
+		if (UEditorAssetLibrary::FindPackageReferencersForAsset(AssetDataToFilter->GetObjectPathString()).IsEmpty())
+		{
+			FilterOutUnusedAssetsData.Add(AssetDataToFilter);
+		}
+	}
+}
+
 inline int32 DeleteAssetsAndLog(const TArray<FAssetData>& AssetsDataToDelete)
 {
 	const int32 DeletedAssetsNum = ObjectTools::DeleteAssets(AssetsDataToDelete);
