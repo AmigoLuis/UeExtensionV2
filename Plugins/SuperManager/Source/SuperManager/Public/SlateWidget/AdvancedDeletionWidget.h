@@ -28,7 +28,8 @@ private:
 	TArray<TSharedPtr<FString>> AssetListConditionStrings;
 	TSharedPtr<STextBlock> ComboDisplayTextBlock;
 	void OnListConditionSelectionChanged(TSharedPtr<FString> SelectedListCondition, ESelectInfo::Type InSelectionInfo);
-TSharedRef<SWidget> OnGenerateAssetListCondition(TSharedPtr<FString> ListConditionString);
+	TSharedRef<SWidget> OnGenerateAssetListCondition(TSharedPtr<FString> ListConditionString);
+	void UpdateAssetsListViewWhenConditionChanged();
 #pragma endregion AssetListConditionComboBoxes
 #pragma region AssetsList
 	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
@@ -39,8 +40,8 @@ TSharedRef<SWidget> OnGenerateAssetListCondition(TSharedPtr<FString> ListConditi
 	void OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData);
 	TSharedRef<SListView<TSharedPtr<FAssetData>>> CreateListViewForAssets(const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay);
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> AssetsListView;
-	void UpdateAssetsListView(const TSharedPtr<FAssetData>& AssetDataDeleted);
-	void UpdateAssetsListView(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted);
+	void UpdateAssetsListViewWhenDeletedAssets(const TSharedPtr<FAssetData>& AssetDataDeleted);
+	void UpdateAssetsListViewWhenDeletedAssets(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted);
 #pragma endregion AssetsList
 #pragma region AssetsBatchActions
 	TSharedRef<SHorizontalBox> CreateHorizontalBoxAndBatchAssetActionButtons();

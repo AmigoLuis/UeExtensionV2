@@ -6,15 +6,16 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 
-#define CONDITION_LIST_ALL_TEXT TEXT("List All Assets")
-#define CONDITION_LIST_UNUSED_TEXT TEXT("List Unused Assets")
+#define CONDITION_LIST_ALL_TEXT TEXT("List all assets")
+#define CONDITION_LIST_UNUSED_TEXT TEXT("List unused assets")
+#define CONDITION_LIST_SAME_NAME_TEXT TEXT("List assets with the same name")
 
 void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 {
 	bCanSupportFocus = true;
 	FSlateFontInfo TitleTextFont = GetEmbossedTextFont();
 	TitleTextFont.Size = 30;
-
+	FixUpRedirectors();
 	StoredAllAssetsData = InArgs._AllAssetsDataToStore;
 	// display all assets by default
 	DisplayedAssetsData = StoredAllAssetsData;
@@ -26,6 +27,7 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 	
 	AssetListConditionStrings.Add(MakeShared<FString>(CONDITION_LIST_ALL_TEXT));
 	AssetListConditionStrings.Add(MakeShared<FString>(CONDITION_LIST_UNUSED_TEXT));
+	AssetListConditionStrings.Add(MakeShared<FString>(CONDITION_LIST_SAME_NAME_TEXT));
 	
 	ChildSlot[
 		SNew(SVerticalBox)
@@ -108,32 +110,12 @@ void SAdvancedDeletionWidget::OnListConditionSelectionChanged(TSharedPtr<FString
 	{
 		// 过滤出没有包引用关系的资产
 		FilteredOutUnusedAssetsData(StoredAllAssetsData, DisplayedAssetsData);
-		// 先过滤出没有展示但是记录了的checkbox对应的key（AssetData）
-		TArray<TSharedPtr<FAssetData>> UnDisplayedAssetsData;
-		for (const TPair AssetData_Checkbox : AssetsAndCheckBoxes)
-		{
-			if (TSharedPtr<FAssetData> AssetData = AssetData_Checkbox.Key; !DisplayedAssetsData.Contains(AssetData))
-			{
-				UnDisplayedAssetsData.Add(AssetData);
-			}
-		}
-		// 更新checkbox集合，删除没有展示的checkbox
-		for (auto AssetAndCheckBox : UnDisplayedAssetsData)
-		{
-			AssetsAndCheckBoxes.Remove(AssetAndCheckBox);
-		}
-		
-		auto RemoveAllSelectedButNotDisplayed = [this](const TSharedPtr<FAssetData>& DisplayedSelectedAssetData)
-		{
-			const bool bNotDisplayed = !DisplayedAssetsData.Contains(DisplayedSelectedAssetData); 
-			if (bNotDisplayed)
-			{
-				// 保存已选中但是当前页面不展示的数据
-				UnDisplayedSelectedAssetsData.AddUnique(DisplayedSelectedAssetData);
-			}
-			return bNotDisplayed;
-		};
-		DisplayedSelectedAssetsData.RemoveAll(RemoveAllSelectedButNotDisplayed);
+		UpdateAssetsListViewWhenConditionChanged();
+	}
+	else if (*SelectedListCondition == CONDITION_LIST_SAME_NAME_TEXT)
+	{
+		FilteredOutAssetsDataWithSameName(StoredAllAssetsData, DisplayedAssetsData);
+		UpdateAssetsListViewWhenConditionChanged();
 	}
 	
 	if (AssetsListView.IsValid())
@@ -146,6 +128,37 @@ TSharedRef<SWidget> SAdvancedDeletionWidget::OnGenerateAssetListCondition(
 	TSharedPtr<FString> ListConditionString)
 {
 	return SNew(STextBlock).Text(FText::FromString(*ListConditionString));
+}
+
+void SAdvancedDeletionWidget::UpdateAssetsListViewWhenConditionChanged()
+{
+	// 先过滤出没有展示的AssetData
+	TArray<TSharedPtr<FAssetData>> UnDisplayedAssetsData;
+	for (auto AssetData:StoredAllAssetsData)
+	{
+		if (!DisplayedAssetsData.Contains(AssetData))
+		{
+			UnDisplayedAssetsData.Add(AssetData);
+		}
+	}
+	// 更新checkbox集合，删除没有展示的checkbox
+	for (auto AssetAndCheckBox : UnDisplayedAssetsData)
+	{
+		AssetsAndCheckBoxes.Remove(AssetAndCheckBox);
+	}
+		
+	auto RemoveAllSelectedButNotDisplayed = [this](const TSharedPtr<FAssetData>& DisplayedSelectedAssetData)
+	{
+		const bool bNotDisplayed = !DisplayedAssetsData.Contains(DisplayedSelectedAssetData); 
+		PrintInLog(TEXT("RemoveAllSelectedButNotDisplayed"));
+		if (bNotDisplayed)
+		{
+			// 保存已选中但是当前页面不展示的数据
+			UnDisplayedSelectedAssetsData.AddUnique(DisplayedSelectedAssetData);
+		}
+		return bNotDisplayed;
+	};
+	DisplayedSelectedAssetsData.RemoveAll(RemoveAllSelectedButNotDisplayed);
 }
 
 #pragma endregion AssetListConditionComboBoxes
@@ -190,6 +203,16 @@ TSharedRef<SCheckBox> SAdvancedDeletionWidget::CreateAssetSelectCheckBox(const T
 		.OnCheckStateChanged(this, &SAdvancedDeletionWidget::OnCheckBoxStateChanged, AssetDataToDisplay)
 		.Visibility(EVisibility::Visible);
 	
+	if (DisplayedSelectedAssetsData.Contains(AssetDataToDisplay))
+	{
+		// 要生成的CheckBox对应的AssetData是目前选中的并且展示中的（尚不清楚为啥会生成一个展示中的row，可能是ue特殊逻辑）
+		// 现在重新生成后恢复为之前的选中，
+		// ToggleCheckedState方法触发OnCheckBoxStateChanged事件，自动将调用DisplayedSelectedAssetsData->AddUnique(AssetData)
+		// 但是由于已经添加过，AddUnique函数不会重复添加
+		// 必须在检查UnDisplayedSelectedAssetsData之前检查，
+		// 因为会检查逻辑中会触发OnCheckBoxStateChanged事件，导致添加到DisplayedSelectedAssetsData中，重复ToggleCheckedState
+		CreatedCheckBox->ToggleCheckedState();
+	}
 	if (UnDisplayedSelectedAssetsData.Contains(AssetDataToDisplay))
 	{
 		// 要生成的CheckBox对应的AssetData是之前选中的但是由于过滤条件导致未展示的，
@@ -209,7 +232,7 @@ TSharedRef<SButton> SAdvancedDeletionWidget::CreateDeleteOneAssetButton(const TS
 			{
 				if (DeleteAssetsAndLog(*AssetDataToDelete) > 0)
 				{
-					UpdateAssetsListView(AssetDataToDelete);
+					UpdateAssetsListViewWhenDeletedAssets(AssetDataToDelete);
 				}
 				return FReply::Handled();
 			});
@@ -248,7 +271,7 @@ TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateLis
 	return ListView;
 }
 
-void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>& AssetDataDeleted)
+void SAdvancedDeletionWidget::UpdateAssetsListViewWhenDeletedAssets(const TSharedPtr<FAssetData>& AssetDataDeleted)
 {
 	// clear deleted asset's checkbox reference before SelectedAssetsData.Remove
 	// because AssetsDataDeleted might be in itself (or StoredUnusedAssetsData)
@@ -265,7 +288,7 @@ void SAdvancedDeletionWidget::UpdateAssetsListView(const TSharedPtr<FAssetData>&
 	}
 }
 
-void SAdvancedDeletionWidget::UpdateAssetsListView(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted)
+void SAdvancedDeletionWidget::UpdateAssetsListViewWhenDeletedAssets(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted)
 {
 	// clear all deleted assets' checkbox reference before SelectedAssetsData.RemoveAll
 	// because AssetsDataDeleted might be itself (or StoredUnusedAssetsData)
@@ -343,13 +366,13 @@ FReply SAdvancedDeletionWidget::OnDeleteAllSelectedAssetsButtonClicked()
 	if (const int32 DeletedAssetsNum = DeleteAssetsAndLog(AssetsDataToDeleteArray); DeletedAssetsNum == AssetsDataToDeleteArray.Num())
 	{
 		ShowMessageDialog(TEXT("All selected assets have been successfully deleted."), false);
-		UpdateAssetsListView(DisplayedSelectedAssetsData);
+		UpdateAssetsListViewWhenDeletedAssets(DisplayedSelectedAssetsData);
 	}
 	else
 	{
 		const TArray<TSharedPtr<FAssetData>>& DeletedAssetsData = FilteredOutDeletedAssetsData(
 			DisplayedSelectedAssetsData, DeletedAssetsNum);
-		UpdateAssetsListView(DeletedAssetsData);
+		UpdateAssetsListViewWhenDeletedAssets(DeletedAssetsData);
 	}
 	return FReply::Handled();
 }

@@ -197,6 +197,40 @@ inline void FilteredOutUnusedAssetsData(
 	}
 }
 
+// 过滤出重名的资产
+inline void FilteredOutAssetsDataWithSameName(
+	const TArray<TSharedPtr<FAssetData>>& AllAssetsDataToFilter, 
+	TArray<TSharedPtr<FAssetData>>& FilterOutSameNameAssetsData)
+{
+	if (AllAssetsDataToFilter.IsEmpty()) return;
+	FilterOutSameNameAssetsData.Empty();
+	const TSet<FName> AddedSameAssetsName;
+	TMap<FName, TSharedPtr<FAssetData>> IteratedAssetsName;
+	for (const TSharedPtr AssetDataToFilter : AllAssetsDataToFilter)
+	{
+		const FName& AssetName = AssetDataToFilter->AssetName;
+		if (const TSharedPtr<FAssetData>* Found = IteratedAssetsName.Find(AssetName))
+		{
+			if (!AddedSameAssetsName.Contains(AssetName))
+			{
+				FilterOutSameNameAssetsData.Add(*Found);
+			}
+			FilterOutSameNameAssetsData.Add(AssetDataToFilter);
+		}
+		else
+		{
+			IteratedAssetsName.Add(AssetDataToFilter->AssetName, AssetDataToFilter);
+		}
+	}
+	// TMultiMap<FName, TSharedPtr<FAssetData>> NameAndAssetsData;
+	// for (const TSharedPtr AssetDataToFilter : AllAssetsDataToFilter)
+	// {
+	// 	// 过滤出重名的资产
+	// 	NameAndAssetsData.Add(AssetDataToFilter->AssetName, AssetDataToFilter);
+	// }
+	// NameAndAssetsData.MultiFind()
+}
+
 inline int32 DeleteAssetsAndLog(const TArray<FAssetData>& AssetsDataToDelete)
 {
 	const int32 DeletedAssetsNum = ObjectTools::DeleteAssets(AssetsDataToDelete);
