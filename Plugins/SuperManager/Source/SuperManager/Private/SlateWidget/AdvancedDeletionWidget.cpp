@@ -164,6 +164,23 @@ void SAdvancedDeletionWidget::UpdateAssetsListViewWhenConditionChanged()
 #pragma endregion AssetListConditionComboBoxes
 
 #pragma region AssetsList
+TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateListViewForAssets(
+	const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay)
+{
+	TSharedRef<SListView<TSharedPtr<FAssetData>>> ListView =
+		SNew(SListView<TSharedPtr<FAssetData>>)
+		.ListItemsSource(&AssetDataToDisplay)
+		.OnGenerateRow(this, &SAdvancedDeletionWidget::OnGenerateListViewRow)
+		.OnMouseButtonClick(this, &SAdvancedDeletionWidget::OnMouseClickListView);
+	AssetsListView = ListView.ToSharedPtr();
+	return ListView;
+}
+
+void SAdvancedDeletionWidget::OnMouseClickListView(TSharedPtr<FAssetData> ClickedListItem)
+{
+	SyncToAssetInContentBrowser(*ClickedListItem);
+}
+
 TSharedRef<ITableRow> SAdvancedDeletionWidget::OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
                                                                      const TSharedRef<STableViewBase>& OwnerTable)
 {
@@ -258,17 +275,6 @@ void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unknown."), SuperManager::Display);
 		break;
 	}
-}
-
-TSharedRef<SListView<TSharedPtr<FAssetData>>> SAdvancedDeletionWidget::CreateListViewForAssets(
-	const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay)
-{
-	TSharedRef<SListView<TSharedPtr<FAssetData>>> ListView =
-		SNew(SListView<TSharedPtr<FAssetData>>)
-		.ListItemsSource(&AssetDataToDisplay)
-		.OnGenerateRow(this, &SAdvancedDeletionWidget::OnGenerateListViewRow);
-	AssetsListView = ListView.ToSharedPtr();
-	return ListView;
 }
 
 void SAdvancedDeletionWidget::UpdateAssetsListViewWhenDeletedAssets(const TSharedPtr<FAssetData>& AssetDataDeleted)

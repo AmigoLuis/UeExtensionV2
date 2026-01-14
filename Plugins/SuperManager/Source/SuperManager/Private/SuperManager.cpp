@@ -160,8 +160,14 @@ void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 		if (IsUnrealProtectedPath(AssetPath)) continue;
 		// 忽略不存在的路径
 		if (!UEditorAssetLibrary::DoesDirectoryExist(AssetPath)) continue;
+		// UEditorAssetLibrary::DoesDirectoryHaveAssets的入参路径如果以"/"结尾，即使目录下有资产也返回false，所以必须去除结尾的"/"
+		FString AssetPathWithNoEndSlash = AssetPath;
+		if (AssetPathWithNoEndSlash.EndsWith("/"))
+		{
+			AssetPathWithNoEndSlash.RemoveAt(AssetPathWithNoEndSlash.Len() - 1);
+		}
 		// 忽略不为空的路径
-		if (UEditorAssetLibrary::DoesDirectoryHaveAssets(AssetPath)) continue;
+		if (UEditorAssetLibrary::DoesDirectoryHaveAssets(AssetPathWithNoEndSlash)) continue;
 		EmptyFolderNames.Append(AssetPath);
 		EmptyFolderNames.Append(TEXT("\n"));
 		EmptyFolders.Add(AssetPath);

@@ -32,13 +32,14 @@ private:
 	void UpdateAssetsListViewWhenConditionChanged();
 #pragma endregion AssetListConditionComboBoxes
 #pragma region AssetsList
+	TSharedRef<SListView<TSharedPtr<FAssetData>>> CreateListViewForAssets(const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay);
+	void OnMouseClickListView(TSharedPtr<FAssetData> ClickedListItem);
 	TSharedRef<ITableRow> OnGenerateListViewRow(TSharedPtr<FAssetData> AssetData,
 	                                            const TSharedRef<STableViewBase>& OwnerTable);
 	TSharedRef<SCheckBox> CreateAssetSelectCheckBox(const TSharedPtr<FAssetData>& AssetDataToDisplay);
 	static TSharedRef<STextBlock> CreateTextBlock(const FString& TextToDisplay, const FSlateFontInfo& TextFont);
 	TSharedRef<SButton> CreateDeleteOneAssetButton(const TSharedPtr<FAssetData>& AssetDataToDelete);
 	void OnCheckBoxStateChanged(ECheckBoxState CheckBoxState, TSharedPtr<FAssetData> AssetData);
-	TSharedRef<SListView<TSharedPtr<FAssetData>>> CreateListViewForAssets(const TArray<TSharedPtr<FAssetData>>& AssetDataToDisplay);
 	TSharedPtr<SListView<TSharedPtr<FAssetData>>> AssetsListView;
 	void UpdateAssetsListViewWhenDeletedAssets(const TSharedPtr<FAssetData>& AssetDataDeleted);
 	void UpdateAssetsListViewWhenDeletedAssets(const TArray<TSharedPtr<FAssetData>>& AssetsDataDeleted);
