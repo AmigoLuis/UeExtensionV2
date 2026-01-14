@@ -8,4 +8,11 @@
 void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 {
 	LOG_ENTER_FUNCTION();
+	if (bUseCustomMaterialName)
+	{
+		if (MaterialNam.IsEmpty() || MaterialNam.Equals(DefaultMaterialName))
+		{
+			ShowMessageDialog("Please input a valid material name");
+		}
+	}
 }

@@ -13,11 +13,15 @@ UCLASS()
 class SUPERMANAGER_API UQuickMaterialCreation : public UEditorUtilityWidget
 {
 	GENERATED_BODY()
-public:
 #pragma region Quick Material Creation Core
+private:
+	const TCHAR* DefaultMaterialName = TEXT("M_");
+public:
 	UFUNCTION(BlueprintCallable)
 	void CreateMaterialFromSelectedTextures();
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures", meta=(EditCondition="bUseCustomMaterialName"))
+	FString MaterialNam = DefaultMaterialName;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
-	FString MaterialNamePrefix = TEXT("M_");
+	bool bUseCustomMaterialName = true;
 #pragma endregion Quick Material Creation Core
 };
