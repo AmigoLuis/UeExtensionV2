@@ -21,6 +21,7 @@ void FSuperManagerModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
+	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(AdvancedDeletionTabID);
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -268,7 +269,9 @@ TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpa
 {
 	return SNew(SDockTab).TabRole(NomadTab)
 		[
-			SNew(SAdvancedDeletionWidget).AllAssetsDataToStore(GetAllAssetDataUnderSelectedFolder())
+			SNew(SAdvancedDeletionWidget)
+			.AllAssetsDataToStore(GetAllAssetDataUnderSelectedFolder())
+			.CurrentFolderPath(MakeShared<FString>(SelectedFolders[0]))
 		];
 }
 #pragma endregion CustomEditorTab

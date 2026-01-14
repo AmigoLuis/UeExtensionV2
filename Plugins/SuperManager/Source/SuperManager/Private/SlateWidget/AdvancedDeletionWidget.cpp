@@ -17,12 +17,13 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 	TitleTextFont.Size = 30;
 	FixUpRedirectors();
 	StoredAllAssetsData = InArgs._AllAssetsDataToStore;
+	CurrentFolderPathToProcess = InArgs._CurrentFolderPath;
 	// display all assets by default
 	DisplayedAssetsData = StoredAllAssetsData;
 	if (StoredAllAssetsData.Num() == 0) return;
 	DisplayedSelectedAssetsData.Empty();
 	UnDisplayedSelectedAssetsData.Empty();
-	
+	AssetListConditionStrings.Empty();
 	AssetsAndCheckBoxes.Empty();
 	
 	AssetListConditionStrings.Add(MakeShared<FString>(CONDITION_LIST_ALL_TEXT));
@@ -46,6 +47,10 @@ void SAdvancedDeletionWidget::Construct(const FArguments& InArgs)
 			+ SHorizontalBox::Slot().AutoWidth()
 			[
 				CreateAssetListConditionComboBox()
+			]
+			+ SHorizontalBox::Slot().AutoWidth()
+			[
+				CreateHelpTextBlockForAdvancedDeletionTab()
 			]
 		]
 		
@@ -94,8 +99,18 @@ TSharedRef<SComboBox<TSharedPtr<FString>>> SAdvancedDeletionWidget::CreateAssetL
 	return AssetListConditionComboBox;
 }
 
+TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateHelpTextBlockForAdvancedDeletionTab()
+{
+	const FString HelpText = 
+		TEXT("You can click the combobox on left "
+	   "to change the condition of listing assets under current processing folder path:\n") + 
+	   	*CurrentFolderPathToProcess;
+	TSharedRef<STextBlock> HelpTextBlock = SNew(STextBlock).Text(FText::FromString(HelpText));
+	return HelpTextBlock;
+}
+
 void SAdvancedDeletionWidget::OnListConditionSelectionChanged(TSharedPtr<FString> SelectedListCondition,
-	ESelectInfo::Type InSelectionInfo)
+                                                              ESelectInfo::Type InSelectionInfo)
 {
 	PrintInLog(*SelectedListCondition, SuperManager::ELogLevel::Display);
 	ComboDisplayTextBlock->SetText(FText::FromString(*SelectedListCondition));
