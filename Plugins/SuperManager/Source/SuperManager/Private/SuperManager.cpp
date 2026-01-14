@@ -6,6 +6,7 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
+#include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
@@ -13,6 +14,7 @@
 void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	FSuperManagerStyle::InitializeIcons();
 	InitCBMenuExtension();
 	RegisterAdvancedDeletionTab();
 }
@@ -22,6 +24,7 @@ void FSuperManagerModule::ShutdownModule()
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(AdvancedDeletionTabID);
+	FSuperManagerStyle::DeInitializeIcons();
 }
 
 #undef LOCTEXT_NAMESPACE
@@ -62,7 +65,8 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 	(
 		FText::FromString(TEXT("Delete unused assets")),
 		FText::FromString(TEXT("Delete all unused assets under selected folder")),
-		FSlateIcon(),
+		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
+			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked)
 	);
 	
@@ -70,7 +74,8 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 	(
 		FText::FromString(TEXT("Delete empty folders")),
 		FText::FromString(TEXT("Delete all empty folders under selected folder")),
-		FSlateIcon(),
+		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
+			FSuperManagerStyle::GetDeleteEmptyFoldersIconName()),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
 	);
 	
@@ -78,7 +83,8 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 	(
 		FText::FromString(TEXT("Advanced delete")),
 		FText::FromString(TEXT("Advanced delete empty folders and unused assets under selected folder")),
-		FSlateIcon(),
+		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
+			FSuperManagerStyle::GetAdvancedDeletionIconName()),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnAdvancedDeleteButtonClicked)
 	);
 }
@@ -261,8 +267,11 @@ void FSuperManagerModule::RegisterAdvancedDeletionTab()
 {
 	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(AdvancedDeletionTabID,
 	                                                  FOnSpawnTab::CreateRaw(
-		                                                  this, &FSuperManagerModule::FOnSpawnAdvancedDeletionTab)).
-	                          SetDisplayName(FText::FromString(AdvancedDeletionTabID));
+		                                                  this,
+		                                                  &FSuperManagerModule::FOnSpawnAdvancedDeletionTab))
+	                        .SetDisplayName(FText::FromString(AdvancedDeletionTabID))
+	                        .SetIcon(FSlateIcon(FSuperManagerStyle::GetStyleSetName(),
+	                                            FSuperManagerStyle::GetAdvancedDeletionIconName()));
 }
 
 TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
