@@ -44,7 +44,6 @@ namespace SuperManager
 }
 // 获取任意符号的字符串（无法用于模板）
 #define SYMBOL_NAME_TEXT(x) TEXT(#x)
-
 // 定义日志类别
 DECLARE_LOG_CATEGORY_EXTERN(A_LogOfSuperManagerPlugin, Log, All);
 #define M_CUSTOM_LOG_CATEGORY A_LogOfSuperManagerPlugin

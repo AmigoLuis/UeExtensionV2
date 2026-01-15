@@ -131,3 +131,17 @@ FString GetAssetPrefixByAssetClass(const UClass* AssetClass)
 		return *FoundAssetPrefix;
 	}
 }
+
+bool CheckIfAssetNameExistsInFolder(const FString& FolderPath, const FString& AssetName)
+{
+	if (FolderPath.IsEmpty() || AssetName.IsEmpty()) return false;
+	for (const TArray<FString>& AssetNamesInFolder = UEditorAssetLibrary::ListAssets(FolderPath, false);
+	     const FString& AssetNameInFolder : AssetNamesInFolder)
+	{
+		if (AssetName.Equals(FPaths::GetBaseFilename(AssetNameInFolder)))
+		{
+			return true;
+		}
+	}
+	return false;
+}

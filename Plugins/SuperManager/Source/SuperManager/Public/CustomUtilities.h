@@ -181,3 +181,5 @@ SuperManager::Error);
 void SyncToAssetInContentBrowser(const FAssetData& AssetData);
 
 FString GetAssetPrefixByAssetClass(const UClass* AssetClass);
+
+bool CheckIfAssetNameExistsInFolder(const FString& FolderPath, const FString& AssetName);

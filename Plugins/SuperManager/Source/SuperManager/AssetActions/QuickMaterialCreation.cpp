@@ -3,9 +3,11 @@
 
 #include "QuickMaterialCreation.h"
 
+#include "AssetToolsModule.h"
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
+#include "Factories/MaterialFactoryNew.h"
 
 #pragma region Quick Material Creation Core
 const FString UQuickMaterialCreation::DefaultMaterialName = GetAssetPrefixByAssetClass(UMaterial::StaticClass());
@@ -16,7 +18,7 @@ void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 	LOG_ENTER_FUNCTION();
 	if (bUseCustomMaterialName)
 	{
-		if (MaterialNam.IsEmpty() || MaterialNam.Equals(DefaultMaterialName))
+		if (MaterialName.IsEmpty() || MaterialName.Equals(DefaultMaterialName))
 		{
 			ShowMessageDialog("Please input a valid material name");
 			return;
@@ -26,7 +28,20 @@ void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 	TArray<UTexture2D*> SelectedTexture2Ds;
 	if (const bool GotTextures = GetSelectedTexture2DAndSetMaterialNameAndPackagePath(SelectedTexture2Ds); 
 		!GotTextures) return;
-	
+	if (CheckIfAssetNameExistsInFolder(SelectedTexture2DPackagePath, MaterialName))
+	{
+		ShowMessageDialog(
+			FString::Format(TEXT("The {0}:{1} is already existed."), 
+				{SYMBOL_NAME_TEXT(MaterialName), MaterialName}));
+		return;
+	}
+	UMaterial* CreatedMaterial = CreateMaterialInSelectedPath(SelectedTexture2DPackagePath, MaterialName);
+	if (CreatedMaterial == nullptr)
+	{
+		ShowMessageDialog(
+			FString::Format(TEXT("Failed to create material:{0} at path: {1}"), 
+				{MaterialName, SelectedTexture2DPackagePath}));
+	}
 }
 #pragma endregion Quick Material Creation Core
 
@@ -56,9 +71,9 @@ bool UQuickMaterialCreation::GetSelectedTexture2DAndSetMaterialNameAndPackagePat
 		}
 		if (!bUseCustomMaterialName && !bSetMaterialName)
 		{
-			MaterialNam = SelectedAssetData.AssetName.ToString();
-			MaterialNam.RemoveFromStart(Texture2DPrefix);
-			MaterialNam.InsertAt(0, DefaultMaterialName);
+			MaterialName = SelectedAssetData.AssetName.ToString();
+			MaterialName.RemoveFromStart(Texture2DPrefix);
+			MaterialName.InsertAt(0, DefaultMaterialName);
 			bSetMaterialName = true;
 		}
 	}
@@ -78,5 +93,18 @@ bool UQuickMaterialCreation::GetSelectedTexture2DAndSetMaterialNameAndPackagePat
 		return false;
 	}
 	return true;
+}
+
+UMaterial* UQuickMaterialCreation::CreateMaterialInSelectedPath(const FString& SelectedPath,
+	const FString& InMaterialName)
+{
+	
+	const FAssetToolsModule* AssetToolsModule = LoadModulePtrWithLog<FAssetToolsModule>(TEXT("AssetTools"));
+	if (!AssetToolsModule) return nullptr;
+	UMaterialFactoryNew* MaterialFactoryNew = NewObject<UMaterialFactoryNew>();
+	UObject* CreatedAsset = 
+		AssetToolsModule->Get().CreateAsset(InMaterialName, SelectedPath, UMaterial::StaticClass(), MaterialFactoryNew);
+	UMaterial* CreatedMaterial = Cast<UMaterial>(CreatedAsset);
+	return CreatedMaterial;
 }
 #pragma endregion Quick Material Creation
