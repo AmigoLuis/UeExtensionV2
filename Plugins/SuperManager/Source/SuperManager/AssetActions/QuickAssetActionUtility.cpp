@@ -8,6 +8,7 @@
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 void UQuickAssetActionUtility::DuplicateAssets(const int32 NumOfDuplicates)
 {
@@ -52,8 +53,8 @@ void UQuickAssetActionUtility::AutoAddPrefixes()
 	for (const auto SelectedAsset : SelectedAssets)
 	{
 		if (!SelectedAsset) continue;
-		const auto PrefixFound = AssetTypeToPrefixMapping.Find(SelectedAsset->GetClass());
-		if (!PrefixFound || PrefixFound->IsEmpty())
+		const FString PrefixFound = GetAssetPrefixByAssetClass(SelectedAsset->GetClass());
+		if (PrefixFound.IsEmpty())
 		{
 			ShowMessageDialog(TEXT("Failed to find Prefix for class: ") + SelectedAsset->GetClass()->GetName());
 			continue;

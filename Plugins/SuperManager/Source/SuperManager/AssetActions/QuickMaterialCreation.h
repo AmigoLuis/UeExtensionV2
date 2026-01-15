@@ -15,7 +15,8 @@ class SUPERMANAGER_API UQuickMaterialCreation : public UEditorUtilityWidget
 	GENERATED_BODY()
 #pragma region Quick Material Creation Core
 private:
-	const TCHAR* DefaultMaterialName = TEXT("M_");
+	static const FString DefaultMaterialName;
+	static const FString Texture2DPrefix;
 public:
 	UFUNCTION(BlueprintCallable)
 	void CreateMaterialFromSelectedTextures();
@@ -23,5 +24,12 @@ public:
 	FString MaterialNam = DefaultMaterialName;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
 	bool bUseCustomMaterialName = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures", meta=(EditCondition="false"))
+	FString SelectedTexture2DPackagePath;
 #pragma endregion Quick Material Creation Core
+	
+#pragma region Quick Material Creation
+	bool GetSelectedTexture2DAndSetMaterialNameAndPackagePath(
+		TArray<UTexture2D*>& SelectedTexture2Ds);
+#pragma endregion Quick Material Creation
 };
