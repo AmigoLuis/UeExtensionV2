@@ -9,7 +9,9 @@
 #include "EditorUtilityLibrary.h"
 #include "MaterialEditingLibrary.h"
 #include "Factories/MaterialFactoryNew.h"
+#include "Factories/MaterialInstanceConstantFactoryNew.h"
 #include "Materials/MaterialExpressionTextureSample.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 #pragma region Quick Material Creation Core
 const FString UQuickMaterialCreation::DefaultMaterialName = GetAssetPrefixByAssetClass(UMaterial::StaticClass());
@@ -28,34 +30,55 @@ void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 	}
 	TArray<FString> SelectedAssetsPathExceptTexture2D;
 	TArray<UTexture2D*> SelectedTexture2Ds;
-	if (const bool GotTextures = GetSelectedTexture2DAndSetMaterialNameAndPackagePath(SelectedTexture2Ds); 
-		!GotTextures) return;
+	if (const bool GotTextures = GetSelectedTexture2DAndSetMaterialNameAndPackagePath(SelectedTexture2Ds);
+		!GotTextures)
+		return;
 	if (CheckIfAssetNameExistsInFolder(SelectedTexture2DPackagePath, MaterialName))
 	{
 		ShowMessageDialog(
-			FString::Format(TEXT("The {0}:{1} is already existed."), 
-				{SYMBOL_NAME_TEXT(MaterialName), MaterialName}));
+			FString::Format(TEXT("The {0}:{1} is already existed."),
+			                {SYMBOL_NAME_TEXT(MaterialName), MaterialName}));
+		MaterialName = DefaultMaterialName;
 		return;
 	}
 	UMaterial* CreatedMaterial = CreateMaterialInSelectedPath(SelectedTexture2DPackagePath, MaterialName);
 	if (CreatedMaterial == nullptr)
 	{
 		ShowMessageDialog(
-			FString::Format(TEXT("Failed to create material:{0} at path: {1}"), 
-				{MaterialName, SelectedTexture2DPackagePath}));
+			FString::Format(TEXT("Failed to create material:{0} at path: {1}"),
+			                {MaterialName, SelectedTexture2DPackagePath}));
 	}
 	if (!ConnectMaterialNodes(CreatedMaterial, SelectedTexture2Ds))
 	{
-		ShowMessageDialog(TEXT("Failed to ") SYMBOL_NAME_TEXT(ConnectMaterialNodes));
-	}
-	else
-	{
+		ShowMessageDialog(TEXT("Failed to Connect Material's Nodes"));
 		MaterialName = DefaultMaterialName;
+		return;
 	}
+	if (bAutoCreateMaterialInstance)
+	{
+		if (const UMaterialInstanceConstant* MaterialInstanceConstant =
+				CreateMaterialInstanceInSelectedPath(SelectedTexture2DPackagePath, MaterialName, CreatedMaterial);
+			MaterialInstanceConstant == nullptr)
+		{
+			ShowMessageDialog(
+				FString::Format(TEXT("Failed to create material instance:{0} at path: {1}"),
+				                {MaterialName, SelectedTexture2DPackagePath}));
+			MaterialName = DefaultMaterialName;
+			return;
+		}
+	}
+	MaterialName = DefaultMaterialName;
 }
 #pragma endregion Quick Material Creation Core
 
 #pragma region Quick Material Creation
+void UQuickMaterialCreation::SetMaterialNameFromTextureName(const FString& TextureName)
+{
+	MaterialName = TextureName;
+	MaterialName.RemoveFromStart(Texture2DPrefix);
+	MaterialName.InsertAt(0, DefaultMaterialName);
+}
+
 bool UQuickMaterialCreation::GetSelectedTexture2DAndSetMaterialNameAndPackagePath(
 	TArray<UTexture2D*>& SelectedTexture2Ds)
 {
@@ -81,9 +104,7 @@ bool UQuickMaterialCreation::GetSelectedTexture2DAndSetMaterialNameAndPackagePat
 		}
 		if (!bUseCustomMaterialName && !bSetMaterialName)
 		{
-			MaterialName = SelectedAssetData.AssetName.ToString();
-			MaterialName.RemoveFromStart(Texture2DPrefix);
-			MaterialName.InsertAt(0, DefaultMaterialName);
+			SetMaterialNameFromTextureName(SelectedAssetData.AssetName.ToString());
 			bSetMaterialName = true;
 		}
 	}
@@ -106,16 +127,39 @@ bool UQuickMaterialCreation::GetSelectedTexture2DAndSetMaterialNameAndPackagePat
 }
 
 UMaterial* UQuickMaterialCreation::CreateMaterialInSelectedPath(const FString& SelectedPath,
-	const FString& InMaterialName)
+                                                                const FString& InMaterialName)
 {
-	
 	const FAssetToolsModule* AssetToolsModule = LoadModulePtrWithLog<FAssetToolsModule>(TEXT("AssetTools"));
 	if (!AssetToolsModule) return nullptr;
 	UMaterialFactoryNew* MaterialFactoryNew = NewObject<UMaterialFactoryNew>();
-	UObject* CreatedAsset = 
+	UObject* CreatedAsset =
 		AssetToolsModule->Get().CreateAsset(InMaterialName, SelectedPath, UMaterial::StaticClass(), MaterialFactoryNew);
 	UMaterial* CreatedMaterial = Cast<UMaterial>(CreatedAsset);
 	return CreatedMaterial;
+}
+
+UMaterialInstanceConstant* UQuickMaterialCreation::CreateMaterialInstanceInSelectedPath(const FString& SelectedPath,
+const FString& InMaterialName, UMaterial* InMaterial)
+{
+	using UMIC = UMaterialInstanceConstant;
+	using UMI_FactoryNew = UMaterialInstanceConstantFactoryNew;
+	FString MaterialInstanceName = InMaterialName;
+	MaterialInstanceName.InsertAt(1, TEXT("I"));
+	const FAssetToolsModule* AssetToolsModule = LoadModulePtrWithLog<FAssetToolsModule>(TEXT("AssetTools"));
+	if (!AssetToolsModule) return nullptr;
+	UMI_FactoryNew* MIFactoryNew = NewObject<UMI_FactoryNew>();
+	if (UMIC* CreatedMI = Cast<UMIC>(AssetToolsModule->Get().CreateAsset(MaterialInstanceName, SelectedPath, 
+			UMIC::StaticClass(), MIFactoryNew)); 
+			CreatedMI != nullptr)
+	{
+		CreatedMI->SetParentEditorOnly(InMaterial);
+		CreatedMI->PostEditChange();
+		InMaterial->PostEditChange();
+		CreatedMI->MarkPackageDirty();
+		InMaterial->MarkPackageDirty();
+		return CreatedMI;
+	}
+	return nullptr;
 }
 #pragma endregion Quick Material Creation
 
@@ -131,7 +175,7 @@ bool UQuickMaterialCreation::ConnectMaterialNodes(UMaterial* CreatedMaterial, TA
 			FString::Format(TEXT("Failed to connect texture: {0}."
 				"\nPlease check if name contains any of \"Supported Texture Names\""
 				" or if too many textures are selected."),
-							{Message}));
+			                {Message}));
 	};
 	for (UTexture2D* Texture : Textures)
 	{
@@ -160,14 +204,15 @@ bool UQuickMaterialCreation::ConnectMaterialNodes(UMaterial* CreatedMaterial, TA
 	if (ConnectedNodesNum > 0)
 	{
 		ShowMessageDialog(
-			FString::Format(TEXT("Successfully connected {0} nodes."), 
-				{ConnectedNodesNum}));
+			FString::Format(TEXT("Successfully connected {0} nodes."),
+			                {ConnectedNodesNum}));
 		return true;
 	}
 	return false;
 }
 
 using UTextureSampleNode = UMaterialExpressionTextureSample;
+
 bool UQuickMaterialCreation::TryConnectToBaseColor(UMaterial* CreatedMaterial, UTexture2D* Texture)
 {
 	if (CreatedMaterial->HasBaseColorConnected()) return false;
@@ -182,7 +227,7 @@ bool UQuickMaterialCreation::TryConnectToBaseColor(UMaterial* CreatedMaterial, U
 					-600, -300 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
-			
+
 			// 连接到 BaseColor 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,
@@ -214,7 +259,7 @@ bool UQuickMaterialCreation::TryConnectToMetallic(UMaterial* CreatedMaterial, UT
 			TextureSample->Texture = Texture;
 			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
-			
+
 			// 连接到 Metallic 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,
@@ -246,7 +291,7 @@ bool UQuickMaterialCreation::TryConnectToNormal(UMaterial* CreatedMaterial, UTex
 			TextureSample->Texture = Texture;
 			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_Normal;
-			
+
 			// 连接到 Metallic 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,
@@ -278,7 +323,7 @@ bool UQuickMaterialCreation::TryConnectToRoughness(UMaterial* CreatedMaterial, U
 			TextureSample->Texture = Texture;
 			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
-			
+
 			// 连接到 Metallic 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,
@@ -305,12 +350,12 @@ bool UQuickMaterialCreation::TryConnectToAmbientOcclusion(UMaterial* CreatedMate
 				UMaterialEditingLibrary::CreateMaterialExpression(
 					CreatedMaterial,
 					UMaterialExpressionTextureSample::StaticClass(),
-					-600, 600 // 节点位置X、Y
+					-600, 900 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
 			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
-			
+
 			// 连接到 Metallic 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,
@@ -328,9 +373,9 @@ bool UQuickMaterialCreation::TryConnectToAmbientOcclusion(UMaterial* CreatedMate
 
 bool UQuickMaterialCreation::TryConnectToORM(UMaterial* CreatedMaterial, UTexture2D* Texture)
 {
-	if (CreatedMaterial->HasAmbientOcclusionConnected() 
-		|| CreatedMaterial->HasRoughnessConnected() 
-		|| CreatedMaterial->HasMetallicConnected()) 
+	if (CreatedMaterial->HasAmbientOcclusionConnected()
+		|| CreatedMaterial->HasRoughnessConnected()
+		|| CreatedMaterial->HasMetallicConnected())
 		return false;
 	for (const FString& ORM_Name : ORMArray)
 	{
@@ -346,7 +391,7 @@ bool UQuickMaterialCreation::TryConnectToORM(UMaterial* CreatedMaterial, UTextur
 			TextureSample->Texture = Texture;
 			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_Masks;
-			
+
 			// 连接到 Metallic 输入
 			UMaterialEditingLibrary::ConnectMaterialProperty(
 				TextureSample,

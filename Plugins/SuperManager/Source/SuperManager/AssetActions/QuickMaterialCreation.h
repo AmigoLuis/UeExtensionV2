@@ -33,6 +33,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
 	bool bUseCustomMaterialName = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
+	bool bAutoCreateMaterialInstance = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
 	EChannelPackingType ChannelPackingType = EChannelPackingType::ECPT_NoChannelPacking;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures", meta=(EditCondition="false"))
 	FString SelectedTexture2DPackagePath;
@@ -85,9 +87,14 @@ public:
 #pragma endregion SupportedTextureNames
 
 #pragma region Quick Material Creation
+	void SetMaterialNameFromTextureName(const FString& TextureName);
 	bool GetSelectedTexture2DAndSetMaterialNameAndPackagePath(
 		TArray<UTexture2D*>& SelectedTexture2Ds);
 	UMaterial* CreateMaterialInSelectedPath(const FString& SelectedPath, const FString& InMaterialName);
+	UMaterialInstanceConstant* CreateMaterialInstanceInSelectedPath(
+		const FString& SelectedPath, 
+		const FString& InMaterialName,
+		UMaterial* InMaterial);
 #pragma endregion Quick Material Creation
 #pragma region Create And Connect Material Nodes
 	bool ConnectMaterialNodes(UMaterial* CreatedMaterial, TArray<UTexture2D*>& Textures);
