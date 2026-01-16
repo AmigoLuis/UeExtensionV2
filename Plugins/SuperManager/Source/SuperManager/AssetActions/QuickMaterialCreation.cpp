@@ -48,6 +48,10 @@ void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 	{
 		ShowMessageDialog(TEXT("Failed to ") SYMBOL_NAME_TEXT(ConnectMaterialNodes));
 	}
+	else
+	{
+		MaterialName = DefaultMaterialName;
+	}
 }
 #pragma endregion Quick Material Creation Core
 
@@ -121,21 +125,36 @@ bool UQuickMaterialCreation::ConnectMaterialNodes(UMaterial* CreatedMaterial, TA
 {
 	if (!CreatedMaterial) return false;
 	uint8 ConnectedNodesNum = 0;
+	auto ShowConnectFailedInfo = [](const FString& Message)
+	{
+		ShowNotifyInfo(
+			FString::Format(TEXT("Failed to connect texture: {0}."
+				"\nPlease check if name contains any of \"Supported Texture Names\""
+				" or if too many textures are selected."),
+							{Message}));
+	};
 	for (UTexture2D* Texture : Textures)
 	{
 		if (!Texture) return false;
 		if (TryConnectToBaseColor(CreatedMaterial, Texture)) ++ConnectedNodesNum;
-		else if (TryConnectToMetallic(CreatedMaterial, Texture)) ++ConnectedNodesNum;
-		else if (TryConnectToRoughness(CreatedMaterial, Texture)) ++ConnectedNodesNum;
 		else if (TryConnectToNormal(CreatedMaterial, Texture)) ++ConnectedNodesNum;
-		else if (TryConnectToAmbientOcclusion(CreatedMaterial, Texture)) ++ConnectedNodesNum;
 		else
 		{
-			ShowNotifyInfo(
-			FString::Format(TEXT("Failed to connect texture: {0}."
-						"\nPlease check if name contains any of \"Supported Texture Names\""
-						" or if too many textures are selected."), 
-				{Texture->GetName()}));
+			switch (ChannelPackingType)
+			{
+			case EChannelPackingType::ECPT_NoChannelPacking:
+				if (TryConnectToRoughness(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+				else if (TryConnectToMetallic(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+				else if (TryConnectToAmbientOcclusion(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+				else ShowConnectFailedInfo(Texture->GetName());
+				break;
+			case EChannelPackingType::ECPT_ORM:
+				if (TryConnectToORM(CreatedMaterial, Texture)) ConnectedNodesNum += 3;
+				else ShowConnectFailedInfo(Texture->GetName());
+				break;
+			case EChannelPackingType::ECPT_MAX:
+				break;
+			}
 		}
 	}
 	if (ConnectedNodesNum > 0)
@@ -193,7 +212,7 @@ bool UQuickMaterialCreation::TryConnectToMetallic(UMaterial* CreatedMaterial, UT
 					-600, 0 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
-			// 金属色的特殊设置
+			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
 			
 			// 连接到 Metallic 输入
@@ -225,7 +244,7 @@ bool UQuickMaterialCreation::TryConnectToNormal(UMaterial* CreatedMaterial, UTex
 					-600, 600 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
-			// 金属色的特殊设置
+			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_Normal;
 			
 			// 连接到 Metallic 输入
@@ -257,7 +276,7 @@ bool UQuickMaterialCreation::TryConnectToRoughness(UMaterial* CreatedMaterial, U
 					-600, 300 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
-			// 金属色的特殊设置
+			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
 			
 			// 连接到 Metallic 输入
@@ -286,10 +305,10 @@ bool UQuickMaterialCreation::TryConnectToAmbientOcclusion(UMaterial* CreatedMate
 				UMaterialEditingLibrary::CreateMaterialExpression(
 					CreatedMaterial,
 					UMaterialExpressionTextureSample::StaticClass(),
-					-600, 0 // 节点位置X、Y
+					-600, 600 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
-			// 金属色的特殊设置
+			// 采样类型特殊设置
 			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
 			
 			// 连接到 Metallic 输入
@@ -298,6 +317,45 @@ bool UQuickMaterialCreation::TryConnectToAmbientOcclusion(UMaterial* CreatedMate
 				TEXT(""),
 				MP_AmbientOcclusion
 			);
+			CreatedMaterial->PostEditChange();
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool UQuickMaterialCreation::TryConnectToORM(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	if (CreatedMaterial->HasAmbientOcclusionConnected() 
+		|| CreatedMaterial->HasRoughnessConnected() 
+		|| CreatedMaterial->HasMetallicConnected()) 
+		return false;
+	for (const FString& ORM_Name : ORMArray)
+	{
+		if (Texture->GetName().Contains(ORM_Name))
+		{
+			AdjustSettingsForORMTexture(Texture);
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-600, 300 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			// 采样类型特殊设置
+			TextureSample->SamplerType = SAMPLERTYPE_Masks;
+			
+			// 连接到 Metallic 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_AmbientOcclusion
+			);
+			CreatedMaterial->GetExpressionInputForProperty(MP_AmbientOcclusion)->Connect(1, TextureSample);
+			CreatedMaterial->GetExpressionInputForProperty(MP_Roughness)->Connect(2, TextureSample);
+			CreatedMaterial->GetExpressionInputForProperty(MP_Metallic)->Connect(3, TextureSample);
 			CreatedMaterial->PostEditChange();
 			CreatedMaterial->MarkPackageDirty();
 			return true;
@@ -333,6 +391,14 @@ void UQuickMaterialCreation::AdjustSettingsForRoughnessTexture(UTexture2D* Textu
 void UQuickMaterialCreation::AdjustSettingsForAmbientOcclusionTexture(UTexture2D* Texture)
 {
 	Texture->CompressionSettings = TC_Default;
+	Texture->SRGB = false;
+	Texture->PostEditChange();
+	Texture->MarkPackageDirty();
+}
+
+void UQuickMaterialCreation::AdjustSettingsForORMTexture(UTexture2D* Texture)
+{
+	Texture->CompressionSettings = TC_Masks;
 	Texture->SRGB = false;
 	Texture->PostEditChange();
 	Texture->MarkPackageDirty();

@@ -6,6 +6,14 @@
 #include "EditorUtilityWidget.h"
 #include "QuickMaterialCreation.generated.h"
 
+UENUM(BlueprintType)
+enum class EChannelPackingType : uint8
+{
+	ECPT_NoChannelPacking UMETA(DisplayName="No Channel Packing"),
+	ECPT_ORM UMETA(DisplayName="Occlusion Roughness Metallic"),
+	ECPT_MAX UMETA(DisplayName="Default Max"),
+};
+
 /**
  * 
  */
@@ -24,6 +32,8 @@ public:
 	FString MaterialName = DefaultMaterialName;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
 	bool bUseCustomMaterialName = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures")
+	EChannelPackingType ChannelPackingType = EChannelPackingType::ECPT_NoChannelPacking;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures", meta=(EditCondition="false"))
 	FString SelectedTexture2DPackagePath;
 #pragma endregion Quick Material Creation Core
@@ -86,9 +96,11 @@ public:
 	bool TryConnectToNormal(UMaterial* CreatedMaterial, UTexture2D* Texture);
 	bool TryConnectToRoughness(UMaterial* CreatedMaterial, UTexture2D* Texture);
 	bool TryConnectToAmbientOcclusion(UMaterial* CreatedMaterial, UTexture2D* Texture);
+	bool TryConnectToORM(UMaterial* CreatedMaterial, UTexture2D* Texture);
 	void AdjustSettingsForMetallicTexture(UTexture2D* Texture);
 	void AdjustSettingsForNormalTexture(UTexture2D* Texture);
 	void AdjustSettingsForRoughnessTexture(UTexture2D* Texture);
 	void AdjustSettingsForAmbientOcclusionTexture(UTexture2D* Texture);
+	void AdjustSettingsForORMTexture(UTexture2D* Texture);
 #pragma endregion Create And Connect Material Nodes
 };
