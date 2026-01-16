@@ -152,12 +152,12 @@ inline EAppReturnType::Type ShowMessageDialog(const FString& Message, const bool
 	{
 		const FText MsgTitle = FText::FromString(TEXT("Warning"));
 		AppReturnType = FMessageDialog::Open(MsgType, FText::FromString(Message), MsgTitle);
-		PrintInLog(Message + TEXT("User selected:") + LexToString(AppReturnType));
+		PrintInLog(Message + TEXT(" User selected:") + LexToString(AppReturnType));
 	}
 	else
 	{
 		AppReturnType = FMessageDialog::Open(MsgType, FText::FromString(Message));
-		PrintInLog(Message + TEXT("User selected:") + LexToString(AppReturnType), SuperManager::Display);
+		PrintInLog(Message + TEXT(" User selected:") + LexToString(AppReturnType), SuperManager::Display);
 	}
 	return AppReturnType;
 }

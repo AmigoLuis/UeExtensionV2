@@ -120,27 +120,47 @@ UMaterial* UQuickMaterialCreation::CreateMaterialInSelectedPath(const FString& S
 bool UQuickMaterialCreation::ConnectMaterialNodes(UMaterial* CreatedMaterial, TArray<UTexture2D*>& Textures)
 {
 	if (!CreatedMaterial) return false;
+	uint8 ConnectedNodesNum = 0;
 	for (UTexture2D* Texture : Textures)
 	{
 		if (!Texture) return false;
-		if (TryConnectToBaseColor(CreatedMaterial, Texture)) return true;
+		if (TryConnectToBaseColor(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+		else if (TryConnectToMetallic(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+		else if (TryConnectToRoughness(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+		else if (TryConnectToNormal(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+		else if (TryConnectToAmbientOcclusion(CreatedMaterial, Texture)) ++ConnectedNodesNum;
+		else
+		{
+			ShowNotifyInfo(
+			FString::Format(TEXT("Failed to connect texture: {0}."
+						"\nPlease check if name contains any of \"Supported Texture Names\""
+						" or if too many textures are selected."), 
+				{Texture->GetName()}));
+		}
+	}
+	if (ConnectedNodesNum > 0)
+	{
+		ShowMessageDialog(
+			FString::Format(TEXT("Successfully connected {0} nodes."), 
+				{ConnectedNodesNum}));
+		return true;
 	}
 	return false;
 }
 
+using UTextureSampleNode = UMaterialExpressionTextureSample;
 bool UQuickMaterialCreation::TryConnectToBaseColor(UMaterial* CreatedMaterial, UTexture2D* Texture)
 {
-	using TextureSampleNode = UMaterialExpressionTextureSample;
 	if (CreatedMaterial->HasBaseColorConnected()) return false;
 	for (const FString& BaseColorName : BaseColorArray)
 	{
 		if (Texture->GetName().Contains(BaseColorName))
 		{
-			TextureSampleNode* TextureSample = Cast<TextureSampleNode>(
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
 				UMaterialEditingLibrary::CreateMaterialExpression(
 					CreatedMaterial,
 					UMaterialExpressionTextureSample::StaticClass(),
-					-300, -300 // 节点位置X、Y
+					-600, -300 // 节点位置X、Y
 				));
 			TextureSample->Texture = Texture;
 			
@@ -150,11 +170,171 @@ bool UQuickMaterialCreation::TryConnectToBaseColor(UMaterial* CreatedMaterial, U
 				TEXT(""),
 				MP_BaseColor
 			);
- 
+			CreatedMaterial->PostEditChange();
 			CreatedMaterial->MarkPackageDirty();
 			return true;
 		}
 	}
 	return false;
+}
+
+bool UQuickMaterialCreation::TryConnectToMetallic(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	if (CreatedMaterial->HasMetallicConnected()) return false;
+	for (const FString& MetallicName : MetallicArray)
+	{
+		if (Texture->GetName().Contains(MetallicName))
+		{
+			AdjustSettingsForMetallicTexture(Texture);
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-600, 0 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			// 金属色的特殊设置
+			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
+			
+			// 连接到 Metallic 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_Metallic
+			);
+			CreatedMaterial->PostEditChange();
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UQuickMaterialCreation::TryConnectToNormal(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	if (CreatedMaterial->HasNormalConnected()) return false;
+	for (const FString& NormalName : NormalArray)
+	{
+		if (Texture->GetName().Contains(NormalName))
+		{
+			AdjustSettingsForNormalTexture(Texture);
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-600, 600 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			// 金属色的特殊设置
+			TextureSample->SamplerType = SAMPLERTYPE_Normal;
+			
+			// 连接到 Metallic 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_Normal
+			);
+			CreatedMaterial->PostEditChange();
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UQuickMaterialCreation::TryConnectToRoughness(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	if (CreatedMaterial->HasRoughnessConnected()) return false;
+	for (const FString& RoughnessName : RoughnessArray)
+	{
+		if (Texture->GetName().Contains(RoughnessName))
+		{
+			AdjustSettingsForRoughnessTexture(Texture);
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-600, 300 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			// 金属色的特殊设置
+			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
+			
+			// 连接到 Metallic 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_Roughness
+			);
+			CreatedMaterial->PostEditChange();
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UQuickMaterialCreation::TryConnectToAmbientOcclusion(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	if (CreatedMaterial->HasAmbientOcclusionConnected()) return false;
+	for (const FString& AmbientOcclusionName : AmbientOcclusionArray)
+	{
+		if (Texture->GetName().Contains(AmbientOcclusionName))
+		{
+			AdjustSettingsForAmbientOcclusionTexture(Texture);
+			UTextureSampleNode* TextureSample = Cast<UTextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-600, 0 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			// 金属色的特殊设置
+			TextureSample->SamplerType = SAMPLERTYPE_LinearColor;
+			
+			// 连接到 Metallic 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_AmbientOcclusion
+			);
+			CreatedMaterial->PostEditChange();
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+
+void UQuickMaterialCreation::AdjustSettingsForMetallicTexture(UTexture2D* Texture)
+{
+	Texture->CompressionSettings = TC_Default;
+	Texture->SRGB = false;
+	Texture->PostEditChange();
+	Texture->MarkPackageDirty();
+}
+
+void UQuickMaterialCreation::AdjustSettingsForNormalTexture(UTexture2D* Texture)
+{
+	Texture->CompressionSettings = TC_Normalmap;
+	// Texture->SRGB = false;
+	Texture->PostEditChange();
+	Texture->MarkPackageDirty();
+}
+
+void UQuickMaterialCreation::AdjustSettingsForRoughnessTexture(UTexture2D* Texture)
+{
+	Texture->CompressionSettings = TC_Default;
+	Texture->SRGB = false;
+	Texture->PostEditChange();
+	Texture->MarkPackageDirty();
+}
+
+void UQuickMaterialCreation::AdjustSettingsForAmbientOcclusionTexture(UTexture2D* Texture)
+{
+	Texture->CompressionSettings = TC_Default;
+	Texture->SRGB = false;
+	Texture->PostEditChange();
+	Texture->MarkPackageDirty();
 }
 #pragma endregion Connect Material Nodes
