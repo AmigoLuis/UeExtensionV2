@@ -7,7 +7,9 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
+#include "MaterialEditingLibrary.h"
 #include "Factories/MaterialFactoryNew.h"
+#include "Materials/MaterialExpressionTextureSample.h"
 
 #pragma region Quick Material Creation Core
 const FString UQuickMaterialCreation::DefaultMaterialName = GetAssetPrefixByAssetClass(UMaterial::StaticClass());
@@ -41,6 +43,10 @@ void UQuickMaterialCreation::CreateMaterialFromSelectedTextures()
 		ShowMessageDialog(
 			FString::Format(TEXT("Failed to create material:{0} at path: {1}"), 
 				{MaterialName, SelectedTexture2DPackagePath}));
+	}
+	if (!ConnectMaterialNodes(CreatedMaterial, SelectedTexture2Ds))
+	{
+		ShowMessageDialog(TEXT("Failed to ") SYMBOL_NAME_TEXT(ConnectMaterialNodes));
 	}
 }
 #pragma endregion Quick Material Creation Core
@@ -108,3 +114,47 @@ UMaterial* UQuickMaterialCreation::CreateMaterialInSelectedPath(const FString& S
 	return CreatedMaterial;
 }
 #pragma endregion Quick Material Creation
+
+
+#pragma region Connect Material Nodes
+bool UQuickMaterialCreation::ConnectMaterialNodes(UMaterial* CreatedMaterial, TArray<UTexture2D*>& Textures)
+{
+	if (!CreatedMaterial) return false;
+	for (UTexture2D* Texture : Textures)
+	{
+		if (!Texture) return false;
+		if (TryConnectToBaseColor(CreatedMaterial, Texture)) return true;
+	}
+	return false;
+}
+
+bool UQuickMaterialCreation::TryConnectToBaseColor(UMaterial* CreatedMaterial, UTexture2D* Texture)
+{
+	using TextureSampleNode = UMaterialExpressionTextureSample;
+	if (CreatedMaterial->HasBaseColorConnected()) return false;
+	for (const FString& BaseColorName : BaseColorArray)
+	{
+		if (Texture->GetName().Contains(BaseColorName))
+		{
+			TextureSampleNode* TextureSample = Cast<TextureSampleNode>(
+				UMaterialEditingLibrary::CreateMaterialExpression(
+					CreatedMaterial,
+					UMaterialExpressionTextureSample::StaticClass(),
+					-300, -300 // 节点位置X、Y
+				));
+			TextureSample->Texture = Texture;
+			
+			// 连接到 BaseColor 输入
+			UMaterialEditingLibrary::ConnectMaterialProperty(
+				TextureSample,
+				TEXT(""),
+				MP_BaseColor
+			);
+ 
+			CreatedMaterial->MarkPackageDirty();
+			return true;
+		}
+	}
+	return false;
+}
+#pragma endregion Connect Material Nodes

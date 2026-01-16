@@ -79,4 +79,8 @@ public:
 		TArray<UTexture2D*>& SelectedTexture2Ds);
 	UMaterial* CreateMaterialInSelectedPath(const FString& SelectedPath, const FString& InMaterialName);
 #pragma endregion Quick Material Creation
+#pragma region Connect Material Nodes
+	bool ConnectMaterialNodes(UMaterial* CreatedMaterial, TArray<UTexture2D*>& Textures);	
+	bool TryConnectToBaseColor(UMaterial* CreatedMaterial, UTexture2D* Texture);
+#pragma endregion Connect Material Nodes
 };

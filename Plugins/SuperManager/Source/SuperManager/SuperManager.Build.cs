@@ -25,7 +25,7 @@ public class SuperManager : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core", "AssetRegistry", "AssetTools", "InputCore", "EditorScriptingUtilities", "Projects"
+				"Core", "AssetRegistry", "AssetTools", "InputCore", "EditorScriptingUtilities", "Projects", "MaterialEditor"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
