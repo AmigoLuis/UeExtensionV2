@@ -25,18 +25,35 @@ class SUPERMANAGER_API UQuickActorActions : public UEditorUtilityWidget
 	GENERATED_BODY()
 public:	
 	
-#pragma region ActorsBatchRandomizeRotation
+#pragma region ActorsBatchRandomizeTransform
 	UFUNCTION(BlueprintCallable)
-	void ActorsBatchRandomizeRotation();
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeRotation")
-	TMap<EBatchActorActionAxis, FVector2D> AxisOfBatchRandomizeRotationAndRangeOfAngle =
+	void ActorsBatchRandomizeTransform();
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeTransform")
+	TMap<EBatchActorActionAxis, FVector2D> AxisAndAngleRangeOfBatchRandomizeTransform =
 	{
 		{EBatchActorActionAxis::EBatchActorActionXAxis, {-360, 360}},
 		{EBatchActorActionAxis::EBatchActorActionYAxis, {-360, 360}},
 		{EBatchActorActionAxis::EBatchActorActionZAxis, {-360, 360}}
 	};
-	bool IsRandomizeRotationParamsValid();
-#pragma endregion ActorsBatchRandomizeRotarion
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeTransform")
+	TMap<EBatchActorActionAxis, FVector2D> AxisAndScaleRangeOfBatchRandomizeTransform =
+	{
+		{EBatchActorActionAxis::EBatchActorActionXAxis, {0.5, 1.5}},
+		{EBatchActorActionAxis::EBatchActorActionYAxis, {0.5, 1.5}},
+		{EBatchActorActionAxis::EBatchActorActionZAxis, {0.5, 1.5}}
+	};
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeTransform")
+	TMap<EBatchActorActionAxis, FVector2D> AxisAndOffsetRangeOfBatchRandomizeTransform =
+	{
+		{EBatchActorActionAxis::EBatchActorActionXAxis, {-10, 10}},
+		{EBatchActorActionAxis::EBatchActorActionYAxis, {-10, 10}},
+		{EBatchActorActionAxis::EBatchActorActionZAxis, {-10, 10}}
+	};
+	bool IsRandomRangeParamsValid();
+	bool RandomizeActorRotation(AActor* Actor);
+	bool RandomizeActorOffset(AActor* Actor);
+	bool RandomizeActorScale(AActor* Actor);
+#pragma endregion ActorsBatchRandomizeTransform
 #pragma region ActorsBatchDuplication
 	UFUNCTION(BlueprintCallable)
 	void ActorsBatchDuplication();

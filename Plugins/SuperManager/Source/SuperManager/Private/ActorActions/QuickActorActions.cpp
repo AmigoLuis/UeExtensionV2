@@ -7,7 +7,7 @@
 #include "Subsystems/EditorActorSubsystem.h"
 
 #pragma region ActorsBatchRandomizeRotation
-void UQuickActorActions::ActorsBatchRandomizeRotation()
+void UQuickActorActions::ActorsBatchRandomizeTransform()
 {
 	if (!GetEditorActorSubsystem()) return;
 	TArray<AActor*> SelectedLevelActors = EditorActorSubsystem->GetSelectedLevelActors();
@@ -16,60 +16,148 @@ void UQuickActorActions::ActorsBatchRandomizeRotation()
 		ShowMessageDialog(TEXT("Please select at least 1 actor."));
 		return;
 	}
-	if (!IsRandomizeRotationParamsValid()) return;
+	if (!IsRandomRangeParamsValid()) return;
 	uint8 RotationRandomizedActorNum = 0;
 	for (AActor* Actor : SelectedLevelActors)
 	{
 		if (!Actor) continue;
-		FRotator RandomRotation = FRotator(0,0,0);
-		for (const TPair P :AxisOfBatchRandomizeRotationAndRangeOfAngle)
-		{
-			if (P.Key == EBatchActorActionAxis::EBatchActorActionXAxis)
-			{
-				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
-				RandomRotation.SetComponentForAxis(EAxis::Type::X, RandomAngle);
-			}
-			if (P.Key == EBatchActorActionAxis::EBatchActorActionYAxis)
-			{
-				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
-				RandomRotation.SetComponentForAxis(EAxis::Type::Y, RandomAngle);
-			}
-			if (P.Key == EBatchActorActionAxis::EBatchActorActionZAxis)
-			{
-				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
-				RandomRotation.SetComponentForAxis(EAxis::Type::Z, RandomAngle);
-			}
-		}
-		Actor->AddActorWorldRotation(RandomRotation);
-		EditorActorSubsystem->SetActorSelectionState(Actor, true);
-		++RotationRandomizedActorNum;
+		const bool RandomizedRotation = RandomizeActorRotation(Actor);
+		const bool RandomizedOffset = RandomizeActorOffset(Actor);
+		const bool RandomizedScale = RandomizeActorScale(Actor);
+		if (RandomizedRotation|| RandomizedOffset || RandomizedScale) ++RotationRandomizedActorNum;
 	}
 	if (RotationRandomizedActorNum == 0)
 	{
-		ShowMessageDialog(TEXT("Sorry, no succeeded RotationRandomization."));
+		ShowMessageDialog(TEXT("Sorry, no succeeded TransformRandomization."));
 	}
 	else
 	{
-		ShowNotifyInfo(FString::Format(TEXT("Successfully randomized {0} actors' rotation."), {RotationRandomizedActorNum}) );
+		ShowNotifyInfo(FString::Format(TEXT("Successfully randomized {0} actors' transform."), {RotationRandomizedActorNum}) );
 	}
 }
-bool UQuickActorActions::IsRandomizeRotationParamsValid()
+bool UQuickActorActions::IsRandomRangeParamsValid()
 {
-	if (AxisOfBatchRandomizeRotationAndRangeOfAngle.IsEmpty())
+	auto IsRangeValid = [](const UE::Math::TVector2<double>& Range)
 	{
-		ShowMessageDialog(TEXT("Please add at least 1 axis and its RangeOfAngle to batch randomize rotation."));
-		return false;
-	}
-	for (TPair P :AxisOfBatchRandomizeRotationAndRangeOfAngle)
-	{
-		const UE::Math::TVector2<double>& RangeOfRandomizeRotationAngle = P.Value;
-		if (RangeOfRandomizeRotationAngle.X > RangeOfRandomizeRotationAngle.Y)
+		if (Range.X > Range.Y)
 		{
-			ShowMessageDialog(TEXT("left part of Range Of Randomize RotationAngle should be smaller"));
+			ShowMessageDialog(TEXT("left part of Range Of Randomize Range should be smaller"));
 			return false;
 		}
+		return true;
+	};
+	for (TPair P :AxisAndAngleRangeOfBatchRandomizeTransform)
+	{
+		if (!IsRangeValid(P.Value)) return false;
+	}
+	for (TPair P :AxisAndOffsetRangeOfBatchRandomizeTransform)
+	{
+		if (!IsRangeValid(P.Value)) return false;
+	}
+	for (TPair P :AxisAndScaleRangeOfBatchRandomizeTransform)
+	{
+		if (!IsRangeValid(P.Value)) return false;
 	}
 	return true;
+}
+
+bool UQuickActorActions::RandomizeActorRotation(AActor* Actor)
+{
+	bool ActorRotated = false;
+	FRotator RandomRotation = FRotator(0,0,0);
+	for (const TPair P :AxisAndAngleRangeOfBatchRandomizeTransform)
+	{
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionXAxis)
+		{
+			const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomRotation.SetComponentForAxis(EAxis::Type::X, RandomAngle);
+			ActorRotated = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionYAxis)
+		{
+			const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomRotation.SetComponentForAxis(EAxis::Type::Y, RandomAngle);
+			ActorRotated = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionZAxis)
+		{
+			const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomRotation.SetComponentForAxis(EAxis::Type::Z, RandomAngle);
+			ActorRotated = true;
+		}
+	}
+	if (ActorRotated)
+	{
+		Actor->AddActorWorldRotation(RandomRotation);
+		EditorActorSubsystem->SetActorSelectionState(Actor, true);	
+	}
+	return ActorRotated;
+}
+
+bool UQuickActorActions::RandomizeActorOffset(AActor* Actor)
+{
+	bool ActorOffset = false;
+	FVector RandomOffset = FVector(0,0,0);
+	for (const TPair P :AxisAndOffsetRangeOfBatchRandomizeTransform)
+	{
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionXAxis)
+		{
+			const double RandomizedOffset = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomOffset.SetComponentForAxis(EAxis::Type::X, RandomizedOffset);
+			ActorOffset = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionYAxis)
+		{
+			const double RandomizedOffset = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomOffset.SetComponentForAxis(EAxis::Type::Y, RandomizedOffset);
+			ActorOffset = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionZAxis)
+		{
+			const double RandomizedOffset = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomOffset.SetComponentForAxis(EAxis::Type::Z, RandomizedOffset);
+			ActorOffset = true;
+		}
+	}
+	if (ActorOffset)
+	{
+		Actor->AddActorWorldOffset(RandomOffset);
+		EditorActorSubsystem->SetActorSelectionState(Actor, true);	
+	}
+	return ActorOffset;
+}
+
+bool UQuickActorActions::RandomizeActorScale(AActor* Actor)
+{
+	bool ActorScaled = false;
+	FVector RandomScale = FVector(0,0,0);
+	for (const TPair P :AxisAndScaleRangeOfBatchRandomizeTransform)
+	{
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionXAxis)
+		{
+			const double RandomizedScale = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomScale.SetComponentForAxis(EAxis::Type::X, RandomizedScale);
+			ActorScaled = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionYAxis)
+		{
+			const double RandomizedScale = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomScale.SetComponentForAxis(EAxis::Type::Y, RandomizedScale);
+			ActorScaled = true;
+		}
+		if (P.Key == EBatchActorActionAxis::EBatchActorActionZAxis)
+		{
+			const double RandomizedScale = FMath::RandRange(P.Value.X, P.Value.Y);
+			RandomScale.SetComponentForAxis(EAxis::Type::Z, RandomizedScale);
+			ActorScaled = true;
+		}
+	}
+	if (ActorScaled)
+	{
+		Actor->SetActorScale3D(RandomScale);
+		EditorActorSubsystem->SetActorSelectionState(Actor, true);	
+	}
+	return ActorScaled;
 }
 
 #pragma endregion ActorsBatchRandomizeRotation
