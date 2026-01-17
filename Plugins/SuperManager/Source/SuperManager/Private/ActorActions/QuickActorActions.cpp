@@ -6,6 +6,70 @@
 #include "DebugHeader.h"
 #include "Subsystems/EditorActorSubsystem.h"
 
+#pragma region ActorsBatchDuplication
+void UQuickActorActions::ActorsBatchDuplication()
+{
+	if (!GetEditorActorSubsystem()) return;
+	TArray<AActor*> SelectedLevelActors = EditorActorSubsystem->GetSelectedLevelActors();
+	if (SelectedLevelActors.Num() < 1)
+	{
+		ShowMessageDialog(TEXT("Please select at least 1 actor."));
+		return;
+	}
+	if (!IsDuplicationParamsValid()) return;
+	uint8 DuplicatedActorNum = 0;
+	for (AActor* Actor : SelectedLevelActors)
+	{
+		if (!Actor) continue;
+		for (uint8 i = 0; i < TimeOfDuplication; ++i)
+		{
+			AActor* DuplicatedActor = EditorActorSubsystem->DuplicateActor(Actor, Actor->GetWorld());
+			if (!DuplicatedActor) continue;
+			float CurrentOffset = (i+1)*OffsetOfDuplication;
+			switch (AxisOfDuplication)
+			{
+			case EDuplicationAxis::EDuplicateAlongXAxis:
+				DuplicatedActor->AddActorWorldOffset(FVector(CurrentOffset, 0.0f, 0.0f));
+				break;
+			case EDuplicationAxis::EDuplicateAlongYAxis:
+				DuplicatedActor->AddActorWorldOffset(FVector(0.0f, CurrentOffset, 0.0f));
+				break;
+			case EDuplicationAxis::EDuplicateAlongZAxis:
+				DuplicatedActor->AddActorWorldOffset(FVector(0.0f, 0.0f, CurrentOffset));
+				break;
+			case EDuplicationAxis::EDefaultMax:
+				break;
+			}
+			EditorActorSubsystem->SetActorSelectionState(DuplicatedActor, true);
+			++DuplicatedActorNum;
+		}
+	}
+	if (DuplicatedActorNum == 0)
+	{
+		ShowMessageDialog(TEXT("Sorry, no succeeded duplication."));
+	}
+	else
+	{
+		ShowNotifyInfo(FString::Format(TEXT("Successfully duplicated {0} actors."), {DuplicatedActorNum}) );
+	}
+}
+bool UQuickActorActions::IsDuplicationParamsValid()
+{
+	if (TimeOfDuplication < 1)
+	{
+		ShowMessageDialog(TEXT("Please set at least 1 time to duplicate."));
+		return false;
+	}
+	if (OffsetOfDuplication < 0.001f)
+	{
+		ShowMessageDialog(TEXT("Please set at least 0.01 offset to duplicate."));
+		return false;
+	}
+	return true;
+}
+#pragma endregion ActorsBatchDuplication
+
+#pragma region ActorsBatchSelection
 void UQuickActorActions::ActorsBatchSelection()
 {
 	if (!GetEditorActorSubsystem()) return;
@@ -39,6 +103,7 @@ void UQuickActorActions::ActorsBatchSelection()
 			{SimilarNameActorNum, SimilarName}));
 	}
 }
+#pragma endregion ActorsBatchSelection
 
 bool UQuickActorActions::GetEditorActorSubsystem()
 {
