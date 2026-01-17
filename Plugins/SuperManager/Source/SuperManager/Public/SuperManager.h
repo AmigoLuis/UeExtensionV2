@@ -4,6 +4,8 @@
 
 #include "Modules/ModuleManager.h"
 
+class UEditorActorSubsystem;
+
 class FSuperManagerModule : public IModuleInterface
 {
 public:
@@ -42,7 +44,10 @@ private:
 	
 	
 #pragma region ObjectSelection
+	const FName LockedObjectSelectionTag = FName("LockedObjectSelection");
 	void InitObjectSelection();
-	void LockOrUnlockObjectSelection(UObject* SelectedObject);
+	void LockOrUnlockObjectSelectionEvent(UObject* SelectedObject);
+	TWeakObjectPtr<UEditorActorSubsystem> EditorActorSubsystem;
+	bool GetEditorActorSubsystem();
 #pragma endregion ObjectSelection
 };

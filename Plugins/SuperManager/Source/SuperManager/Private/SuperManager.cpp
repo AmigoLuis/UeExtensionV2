@@ -10,6 +10,7 @@
 #include "Selection.h"
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
+#include "Subsystems/EditorActorSubsystem.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -78,7 +79,7 @@ void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
 		);
 	MenuBuilder.AddMenuEntry
 	(
-		FText::FromString(TEXT("Unlock selected objects")),
+		FText::FromString(TEXT("Unlock all objects")),
 		FText::FromString(TEXT("Unlock all selected objects so that you can select them again.")),
 		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
 			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),// still use old icon
@@ -89,11 +90,52 @@ void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
 void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	uint8 NumOfLockedObjects = 0;
+	for (AActor* SelectedActor : SelectedActors)
+	{
+		if (SelectedActor == nullptr) continue;
+		if (!SelectedActor->ActorHasTag(LockedObjectSelectionTag))
+		{
+			SelectedActor->Tags.Add(LockedObjectSelectionTag);
+			EditorActorSubsystem->SetActorSelectionState(SelectedActor, false);
+			++NumOfLockedObjects;
+		}
+	}
+	if (NumOfLockedObjects > 0)
+	{
+		ShowNotifyInfo(FString::Format(TEXT("Locked {0} objects's selection."), 
+			{NumOfLockedObjects}));
+	}
+	else
+	{
+		ShowMessageDialog(TEXT("Not lock any object's selection."));
+	}
 }
 
 void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	if (!GetEditorActorSubsystem()) return;
+	uint8 NumOfUnlockedObjects = 0;
+	for (const TArray<AActor*>& AllLevelActors = EditorActorSubsystem->GetAllLevelActors(); 
+		AActor* SelectedActor : AllLevelActors)
+	{
+		if (SelectedActor == nullptr) continue;
+		if (SelectedActor->ActorHasTag(LockedObjectSelectionTag))
+		{
+			SelectedActor->Tags.Remove(LockedObjectSelectionTag);
+			++NumOfUnlockedObjects;
+		}
+	}
+	if (NumOfUnlockedObjects > 0)
+	{
+		ShowNotifyInfo(FString::Format(TEXT("Unlocked {0} objects's selection."), 
+			{NumOfUnlockedObjects}));
+	}
+	else
+	{
+		ShowMessageDialog(TEXT("Not unlock any object's selection."));
+	}
 }
 #pragma endregion LevelMenuExtention
 
@@ -356,26 +398,38 @@ TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpa
 void FSuperManagerModule::InitObjectSelection()
 {
 	USelection* UserSelections = GEditor->GetSelectedActors();
-	UserSelections->SelectObjectEvent.AddRaw(this, &FSuperManagerModule::LockOrUnlockObjectSelection);
+	UserSelections->SelectObjectEvent.AddRaw(this, &FSuperManagerModule::LockOrUnlockObjectSelectionEvent);
 }
 
-void FSuperManagerModule::LockOrUnlockObjectSelection(UObject* SelectedObject)
+void FSuperManagerModule::LockOrUnlockObjectSelectionEvent(UObject* SelectedObject)
 {
-	if (AActor* InSelectedActor = Cast<AActor>(SelectedObject); InSelectedActor != nullptr)
+	if (AActor* InSelectedActor = Cast<AActor>(SelectedObject); InSelectedActor != nullptr && GetEditorActorSubsystem())
 	{
-		PrintInLog(InSelectedActor->GetActorLabel());
-		// for (AActor* SelectedActor :SelectedActors)
-		// {
-		// 	if
-		// }
-	} else if (SelectedObject != nullptr)
+		if (InSelectedActor->ActorHasTag(LockedObjectSelectionTag))
+		{
+			EditorActorSubsystem->SetActorSelectionState(InSelectedActor, false);
+			ShowNotifyInfo(FString::Format(
+				TEXT("Actor: {0} can not be selected in level cause its' selection is locked"), 
+				{InSelectedActor->GetActorLabel()}));
+		}
+	}
+	else if (SelectedObject != nullptr)
 	{
 		PrintInLog(SelectedObject->GetName() + TEXT(" (GetName) Cast to AActor failed."));
 		PrintInLog(SelectedObject->GetPathName() + TEXT(" (GetPathName) Cast to AActor failed."));
 		PrintInLog(SelectedObject->GetFName().ToString() + TEXT(" (GetFName) Cast to AActor failed."));
-	} else
+	}
+	else
 	{
 		PrintInLog(TEXT("selected object is nullptr."));
 	}
+}
+bool FSuperManagerModule::GetEditorActorSubsystem()
+{
+	if (!EditorActorSubsystem.IsValid())
+	{
+		EditorActorSubsystem = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
+	}
+	return EditorActorSubsystem.IsValid();
 }
 #pragma endregion ObjectSelection
