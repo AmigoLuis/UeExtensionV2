@@ -7,6 +7,7 @@
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
 #include "LevelEditor.h"
+#include "Selection.h"
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 
@@ -18,6 +19,7 @@ void FSuperManagerModule::StartupModule()
 	FSuperManagerStyle::InitializeIcons();
 	InitLevelMenuExtension();
 	InitCBMenuExtension();
+	InitObjectSelection();
 	RegisterAdvancedDeletionTab();
 }
 
@@ -348,3 +350,32 @@ TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpa
 		];
 }
 #pragma endregion CustomEditorTab
+
+#pragma region ObjectSelection
+
+void FSuperManagerModule::InitObjectSelection()
+{
+	USelection* UserSelections = GEditor->GetSelectedActors();
+	UserSelections->SelectObjectEvent.AddRaw(this, &FSuperManagerModule::LockOrUnlockObjectSelection);
+}
+
+void FSuperManagerModule::LockOrUnlockObjectSelection(UObject* SelectedObject)
+{
+	if (AActor* InSelectedActor = Cast<AActor>(SelectedObject); InSelectedActor != nullptr)
+	{
+		PrintInLog(InSelectedActor->GetActorLabel());
+		// for (AActor* SelectedActor :SelectedActors)
+		// {
+		// 	if
+		// }
+	} else if (SelectedObject != nullptr)
+	{
+		PrintInLog(SelectedObject->GetName() + TEXT(" (GetName) Cast to AActor failed."));
+		PrintInLog(SelectedObject->GetPathName() + TEXT(" (GetPathName) Cast to AActor failed."));
+		PrintInLog(SelectedObject->GetFName().ToString() + TEXT(" (GetFName) Cast to AActor failed."));
+	} else
+	{
+		PrintInLog(TEXT("selected object is nullptr."));
+	}
+}
+#pragma endregion ObjectSelection

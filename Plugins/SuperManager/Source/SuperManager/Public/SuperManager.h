@@ -39,4 +39,10 @@ private:
 	static const TCHAR* AdvancedDeletionTabID;
 	TSharedRef<SDockTab> FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs);
 #pragma endregion CustomEditorTab
+	
+	
+#pragma region ObjectSelection
+	void InitObjectSelection();
+	void LockOrUnlockObjectSelection(UObject* SelectedObject);
+#pragma endregion ObjectSelection
 };
