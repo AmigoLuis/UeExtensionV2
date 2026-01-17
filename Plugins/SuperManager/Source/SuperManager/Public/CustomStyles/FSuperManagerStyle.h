@@ -16,11 +16,15 @@ public:
 	static FName GetDeleteUnusedAssetsIconName() { return DeleteUnusedAssetsIconName; }
 	static FName GetDeleteEmptyFoldersIconName() { return DeleteEmptyFoldersIconName; }
 	static FName GetAdvancedDeletionIconName() { return AdvancedDeletionIconName; }
+	static FName GetSelectionLockIconName() { return SelectionLockIconName; }
+	static FName GetSelectionUnlockIconName() { return SelectionUnlockIconName; }
 private:
 	static FName StyleSetName;
 	static FName DeleteUnusedAssetsIconName;
 	static FName DeleteEmptyFoldersIconName;
 	static FName AdvancedDeletionIconName;
+	static FName SelectionLockIconName;
+	static FName SelectionUnlockIconName;
 	static TSharedPtr<FSlateStyleSet> CreateSlateStyleSet();
 	static TSharedPtr<FSlateStyleSet> CreatedSlateStyleSet;
 };

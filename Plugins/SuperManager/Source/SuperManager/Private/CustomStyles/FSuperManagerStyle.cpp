@@ -19,6 +19,8 @@ FName FSuperManagerStyle::StyleSetName = FName("SuperManagerStyle");
 FName FSuperManagerStyle::DeleteUnusedAssetsIconName = FName("DeleteUnusedAssets");
 FName FSuperManagerStyle::DeleteEmptyFoldersIconName = FName("DeleteEmptyFolders");
 FName FSuperManagerStyle::AdvancedDeletionIconName = FName("AdvancedDeletion");
+FName FSuperManagerStyle::SelectionLockIconName = FName("SelectionLock");
+FName FSuperManagerStyle::SelectionUnlockIconName = FName("SelectionUnlock");
 TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreatedSlateStyleSet = nullptr;
 TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreateSlateStyleSet()
 {
@@ -40,6 +42,8 @@ TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreateSlateStyleSet()
 	SetIconsLambda(DeleteUnusedAssetsIconName);
 	SetIconsLambda(DeleteEmptyFoldersIconName);
 	SetIconsLambda(AdvancedDeletionIconName);
+	SetIconsLambda(SelectionLockIconName);
+	SetIconsLambda(SelectionUnlockIconName);
 	return CustomSlateStyleSet;
 }
 

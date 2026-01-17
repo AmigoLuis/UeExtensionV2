@@ -74,7 +74,7 @@ void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
 		FText::FromString(TEXT("Lock selected objects")),
 		FText::FromString(TEXT("Lock all selected objects so that you can't select them until you unlock them.")),
 		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
-			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),// still use old icon
+			FSuperManagerStyle::GetSelectionLockIconName()),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnLockSelectedObjectButtonClicked)
 		);
 	MenuBuilder.AddMenuEntry
@@ -82,7 +82,7 @@ void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
 		FText::FromString(TEXT("Unlock all objects")),
 		FText::FromString(TEXT("Unlock all selected objects so that you can select them again.")),
 		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
-			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),// still use old icon
+			FSuperManagerStyle::GetSelectionUnlockIconName()),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnUnLockSelectedObjectButtonClicked)
 	);
 }
@@ -408,7 +408,7 @@ void FSuperManagerModule::LockOrUnlockObjectSelectionEvent(UObject* SelectedObje
 		if (InSelectedActor->ActorHasTag(LockedObjectSelectionTag))
 		{
 			EditorActorSubsystem->SetActorSelectionState(InSelectedActor, false);
-			ShowNotifyInfo(FString::Format(
+			PrintInLog(FString::Format(
 				TEXT("Actor: {0} can not be selected in level cause its' selection is locked"), 
 				{InSelectedActor->GetActorLabel()}));
 		}
