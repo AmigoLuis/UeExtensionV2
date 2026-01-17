@@ -6,6 +6,7 @@
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
+#include "LevelEditor.h"
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 
@@ -15,6 +16,7 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FSuperManagerStyle::InitializeIcons();
+	InitLevelMenuExtension();
 	InitCBMenuExtension();
 	RegisterAdvancedDeletionTab();
 }
@@ -30,6 +32,68 @@ void FSuperManagerModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSuperManagerModule, SuperManager)
+
+#pragma region LevelMenuExtention
+void FSuperManagerModule::InitLevelMenuExtension()
+{
+	using FSelectedActors = FLevelEditorModule::FLevelViewportMenuExtender_SelectedActors;
+	FLevelEditorModule* LevelEditorModulePtr = LoadModulePtrWithLog<
+		FLevelEditorModule>(TEXT("LevelEditor"));
+	if (!LevelEditorModulePtr) return;
+	TArray<FSelectedActors>& LevelViewPortMenuExtenders = LevelEditorModulePtr->
+		GetAllLevelViewportContextMenuExtenders();
+	LevelViewPortMenuExtenders.Add(
+		FSelectedActors::CreateRaw(this, &FSuperManagerModule::CreateLevelViewportMenuExtender));
+	
+}
+
+TSharedRef<FExtender> FSuperManagerModule::CreateLevelViewportMenuExtender(TSharedRef<FUICommandList> CommandList,
+	TArray<AActor*> InSelectedActors)
+{
+	TSharedRef<FExtender> Extender = MakeShareable(new FExtender);
+	SelectedActors = InSelectedActors;
+	if (InSelectedActors.Num() > 0)
+	{
+		Extender->AddMenuExtension(
+			FName("SaveActor"),
+			EExtensionHook::Before,
+			CommandList,
+			FMenuExtensionDelegate::CreateRaw(this, &FSuperManagerModule::AddLevelViewMenuEntry)
+		);
+	}
+	return Extender;
+}
+
+void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
+{
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Lock selected objects")),
+		FText::FromString(TEXT("Lock all selected objects so that you can't select them until you unlock them.")),
+		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
+			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),// still use old icon
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnLockSelectedObjectButtonClicked)
+		);
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Unlock selected objects")),
+		FText::FromString(TEXT("Unlock all selected objects so that you can select them again.")),
+		FSlateIcon(FSuperManagerStyle::GetStyleSetName(), 
+			FSuperManagerStyle::GetDeleteUnusedAssetsIconName()),// still use old icon
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnUnLockSelectedObjectButtonClicked)
+	);
+}
+
+void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
+{
+	LOG_ENTER_FUNCTION();
+}
+
+void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
+{
+	LOG_ENTER_FUNCTION();
+}
+#pragma endregion LevelMenuExtention
 
 #pragma region ContentBrowserMenuExtention
 void FSuperManagerModule::InitCBMenuExtension()

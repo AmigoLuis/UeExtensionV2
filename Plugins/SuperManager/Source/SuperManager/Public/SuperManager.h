@@ -12,6 +12,17 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 private:
+#pragma region LevelMenuExtention
+	void InitLevelMenuExtension();
+	TSharedRef<FExtender> CreateLevelViewportMenuExtender(
+		TSharedRef<FUICommandList> CommandList, 
+		TArray<AActor*> InSelectedActors); 
+	void AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder);
+	void OnLockSelectedObjectButtonClicked();
+	void OnUnLockSelectedObjectButtonClicked();
+	TArray<AActor*> SelectedActors;
+#pragma endregion LevelMenuExtention
+	
 #pragma region ContentBrowserMenuExtention 
 	TArray<FString> SelectedFolders;
 	void InitCBMenuExtension();
