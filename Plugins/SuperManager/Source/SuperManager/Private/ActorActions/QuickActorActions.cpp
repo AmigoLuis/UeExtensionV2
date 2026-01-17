@@ -6,6 +6,74 @@
 #include "DebugHeader.h"
 #include "Subsystems/EditorActorSubsystem.h"
 
+#pragma region ActorsBatchRandomizeRotation
+void UQuickActorActions::ActorsBatchRandomizeRotation()
+{
+	if (!GetEditorActorSubsystem()) return;
+	TArray<AActor*> SelectedLevelActors = EditorActorSubsystem->GetSelectedLevelActors();
+	if (SelectedLevelActors.Num() < 1)
+	{
+		ShowMessageDialog(TEXT("Please select at least 1 actor."));
+		return;
+	}
+	if (!IsRandomizeRotationParamsValid()) return;
+	uint8 RotationRandomizedActorNum = 0;
+	for (AActor* Actor : SelectedLevelActors)
+	{
+		if (!Actor) continue;
+		FRotator RandomRotation = FRotator(0,0,0);
+		for (const TPair P :AxisOfBatchRandomizeRotationAndRangeOfAngle)
+		{
+			if (P.Key == EBatchActorActionAxis::EBatchActorActionXAxis)
+			{
+				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+				RandomRotation.SetComponentForAxis(EAxis::Type::X, RandomAngle);
+			}
+			if (P.Key == EBatchActorActionAxis::EBatchActorActionYAxis)
+			{
+				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+				RandomRotation.SetComponentForAxis(EAxis::Type::Y, RandomAngle);
+			}
+			if (P.Key == EBatchActorActionAxis::EBatchActorActionZAxis)
+			{
+				const double RandomAngle = FMath::RandRange(P.Value.X, P.Value.Y);
+				RandomRotation.SetComponentForAxis(EAxis::Type::Z, RandomAngle);
+			}
+		}
+		Actor->AddActorWorldRotation(RandomRotation);
+		EditorActorSubsystem->SetActorSelectionState(Actor, true);
+		++RotationRandomizedActorNum;
+	}
+	if (RotationRandomizedActorNum == 0)
+	{
+		ShowMessageDialog(TEXT("Sorry, no succeeded RotationRandomization."));
+	}
+	else
+	{
+		ShowNotifyInfo(FString::Format(TEXT("Successfully randomized {0} actors' rotation."), {RotationRandomizedActorNum}) );
+	}
+}
+bool UQuickActorActions::IsRandomizeRotationParamsValid()
+{
+	if (AxisOfBatchRandomizeRotationAndRangeOfAngle.IsEmpty())
+	{
+		ShowMessageDialog(TEXT("Please add at least 1 axis and its RangeOfAngle to batch randomize rotation."));
+		return false;
+	}
+	for (TPair P :AxisOfBatchRandomizeRotationAndRangeOfAngle)
+	{
+		const UE::Math::TVector2<double>& RangeOfRandomizeRotationAngle = P.Value;
+		if (RangeOfRandomizeRotationAngle.X > RangeOfRandomizeRotationAngle.Y)
+		{
+			ShowMessageDialog(TEXT("left part of Range Of Randomize RotationAngle should be smaller"));
+			return false;
+		}
+	}
+	return true;
+}
+
+#pragma endregion ActorsBatchRandomizeRotation
+
 #pragma region ActorsBatchDuplication
 void UQuickActorActions::ActorsBatchDuplication()
 {
@@ -28,16 +96,16 @@ void UQuickActorActions::ActorsBatchDuplication()
 			float CurrentOffset = (i+1)*OffsetOfDuplication;
 			switch (AxisOfDuplication)
 			{
-			case EDuplicationAxis::EDuplicateAlongXAxis:
+			case EBatchActorActionAxis::EBatchActorActionXAxis:
 				DuplicatedActor->AddActorWorldOffset(FVector(CurrentOffset, 0.0f, 0.0f));
 				break;
-			case EDuplicationAxis::EDuplicateAlongYAxis:
+			case EBatchActorActionAxis::EBatchActorActionYAxis:
 				DuplicatedActor->AddActorWorldOffset(FVector(0.0f, CurrentOffset, 0.0f));
 				break;
-			case EDuplicationAxis::EDuplicateAlongZAxis:
+			case EBatchActorActionAxis::EBatchActorActionZAxis:
 				DuplicatedActor->AddActorWorldOffset(FVector(0.0f, 0.0f, CurrentOffset));
 				break;
-			case EDuplicationAxis::EDefaultMax:
+			case EBatchActorActionAxis::EDefaultMax:
 				break;
 			}
 			EditorActorSubsystem->SetActorSelectionState(DuplicatedActor, true);

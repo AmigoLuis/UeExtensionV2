@@ -7,11 +7,11 @@
 #include "QuickActorActions.generated.h"
 
 UENUM(BlueprintType)
-enum class EDuplicationAxis : uint8
+enum class EBatchActorActionAxis : uint8
 {
-	EDuplicateAlongXAxis UMETA(DisplayName="DuplicateAlongXAxis"),
-	EDuplicateAlongYAxis UMETA(DisplayName="DuplicateAlongYAxis"),
-	EDuplicateAlongZAxis UMETA(DisplayName="DuplicateAlongZAxis"),
+	EBatchActorActionXAxis UMETA(DisplayName="XAxis"),
+	EBatchActorActionYAxis UMETA(DisplayName="YAxis"),
+	EBatchActorActionZAxis UMETA(DisplayName="ZAxis"),
 	EDefaultMax UMETA(DisplayName="Default Max"),
 };
 
@@ -25,6 +25,18 @@ class SUPERMANAGER_API UQuickActorActions : public UEditorUtilityWidget
 	GENERATED_BODY()
 public:	
 	
+#pragma region ActorsBatchRandomizeRotation
+	UFUNCTION(BlueprintCallable)
+	void ActorsBatchRandomizeRotation();
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeRotation")
+	TMap<EBatchActorActionAxis, FVector2D> AxisOfBatchRandomizeRotationAndRangeOfAngle =
+	{
+		{EBatchActorActionAxis::EBatchActorActionXAxis, {-360, 360}},
+		{EBatchActorActionAxis::EBatchActorActionYAxis, {-360, 360}},
+		{EBatchActorActionAxis::EBatchActorActionZAxis, {-360, 360}}
+	};
+	bool IsRandomizeRotationParamsValid();
+#pragma endregion ActorsBatchRandomizeRotarion
 #pragma region ActorsBatchDuplication
 	UFUNCTION(BlueprintCallable)
 	void ActorsBatchDuplication();
@@ -33,7 +45,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchDuplication")
 	float OffsetOfDuplication;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchDuplication")
-	EDuplicationAxis AxisOfDuplication = EDuplicationAxis::EDuplicateAlongXAxis;
+	EBatchActorActionAxis AxisOfDuplication = EBatchActorActionAxis::EBatchActorActionXAxis;
 	bool IsDuplicationParamsValid();
 #pragma endregion ActorsBatchDuplication
 #pragma region ActorsBatchSelection
