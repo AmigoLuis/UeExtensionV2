@@ -7,7 +7,9 @@
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
 #include "LevelEditor.h"
+#include "SceneOutlinerModule.h"
 #include "Selection.h"
+#include "CustomOutliner/FOutlinerSelectionLock.h"
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
@@ -25,6 +27,7 @@ void FSuperManagerModule::StartupModule()
 	InitCBMenuExtension();
 	InitObjectSelection();
 	RegisterAdvancedDeletionTab();
+	InitSceneOutlinerColumnExtension();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -455,4 +458,20 @@ void FSuperManagerModule::InitCustomUICommands()
 		                            this, &FSuperManagerModule::OnUnLockSelectedObjectButtonClicked));
 }
 #pragma endregion CustomUICommands
+
+#pragma region SceneOutlinerExtension
+void FSuperManagerModule::InitSceneOutlinerColumnExtension()
+{
+	FSceneOutlinerModule* SceneOutlinerModulePtr = LoadModulePtrWithLog<FSceneOutlinerModule>(TEXT("SceneOutliner"));
+	if (!SceneOutlinerModulePtr) return;
+	const FSceneOutlinerColumnInfo SelectionLockColumnInfo(ESceneOutlinerColumnVisibility::Visible, 0,
+	                                                       FCreateSceneOutlinerColumn::CreateLambda(
+		                                                       [](ISceneOutliner& SceneOutliner)
+		                                                       {
+			                                                       return MakeShareable(
+				                                                       new FOutlinerSelectionLock(SceneOutliner));
+		                                                       }));
+	SceneOutlinerModulePtr->RegisterDefaultColumnType<FOutlinerSelectionLock>(SelectionLockColumnInfo);
+}
+#pragma endregion SceneOutlinerExtension
 #undef LOCTEXT_NAMESPACE

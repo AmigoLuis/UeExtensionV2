@@ -15,6 +15,15 @@ void FSuperManagerStyle::InitializeIcons()
 	FSlateStyleRegistry::RegisterSlateStyle(*CreatedSlateStyleSet);
 }
 
+TSharedPtr<FSlateStyleSet> FSuperManagerStyle::GetCreatedSlateStyleSet()
+{
+	if (!CreatedSlateStyleSet.IsValid())
+	{
+		CreatedSlateStyleSet = CreateSlateStyleSet();
+	}
+	return CreatedSlateStyleSet;
+}
+
 FName FSuperManagerStyle::StyleSetName = FName("SuperManagerStyle");
 FName FSuperManagerStyle::DeleteUnusedAssetsIconName = FName("DeleteUnusedAssets");
 FName FSuperManagerStyle::DeleteEmptyFoldersIconName = FName("DeleteEmptyFolders");

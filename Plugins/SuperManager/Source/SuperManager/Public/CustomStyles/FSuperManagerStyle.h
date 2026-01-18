@@ -18,6 +18,8 @@ public:
 	static FName GetAdvancedDeletionIconName() { return AdvancedDeletionIconName; }
 	static FName GetSelectionLockIconName() { return SelectionLockIconName; }
 	static FName GetSelectionUnlockIconName() { return SelectionUnlockIconName; }
+	
+	static TSharedPtr<FSlateStyleSet> GetCreatedSlateStyleSet();
 private:
 	static FName StyleSetName;
 	static FName DeleteUnusedAssetsIconName;

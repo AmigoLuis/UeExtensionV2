@@ -14,7 +14,7 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 private:
-#pragma region LevelMenuExtention
+#pragma region LevelMenuExtension
 	void InitLevelMenuExtension();
 	TSharedRef<FExtender> CreateLevelViewportMenuExtender(
 		TSharedRef<FUICommandList> CommandList, 
@@ -22,9 +22,9 @@ private:
 	void AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder);
 	void OnLockSelectedObjectButtonClicked();
 	void OnUnLockSelectedObjectButtonClicked();
-#pragma endregion LevelMenuExtention
+#pragma endregion LevelMenuExtension
 	
-#pragma region ContentBrowserMenuExtention 
+#pragma region ContentBrowserMenuExtension 
 	TArray<FString> SelectedFolders;
 	void InitCBMenuExtension();
 	TSharedRef<FExtender> CustomCBMenuExtender(const TArray<FString>& SelectedPaths);
@@ -33,7 +33,7 @@ private:
 	void OnDeleteEmptyFoldersButtonClicked();
 	void OnAdvancedDeleteButtonClicked();
 	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
-#pragma endregion ContentBrowserMenuExtention
+#pragma endregion ContentBrowserMenuExtension
 	
 #pragma region CustomEditorTab
 	void RegisterAdvancedDeletionTab();
@@ -54,4 +54,8 @@ private:
 	TSharedPtr<FUICommandList> CustomUICommands;
 	void InitCustomUICommands();
 #pragma endregion CustomUICommands
+	
+#pragma region SceneOutlinerExtension
+	void InitSceneOutlinerColumnExtension();
+#pragma endregion SceneOutlinerExtension
 };
