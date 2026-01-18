@@ -29,10 +29,14 @@ const TSharedRef<SWidget> FOutlinerSelectionLock::ConstructRowWidget(FSceneOutli
 	if (!ActorTreeItem || !ActorTreeItem->IsValid()) return SNullWidget::NullWidget;
 	const bool IsActorLocked = ActorTreeItem->Actor->ActorHasTag(FSuperManagerModule::LockedObjectSelectionTag);
 
+	const FCheckBoxStyle& CheckBoxStyle = FSuperManagerStyle::GetCreatedSlateStyleSet()->GetWidgetStyle<FCheckBoxStyle>(
+		FSuperManagerStyle::GetSelectionLockToggleButtonIconName());
 	TSharedRef<SWidget> CreatedWidget = SNew(SCheckBox)
 		.HAlign(HAlign_Center)
 		.IsChecked(IsActorLocked ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 		.Visibility(EVisibility::Visible)
+		.Type(ESlateCheckBoxType::Type::ToggleButton)
+		.Style(&CheckBoxStyle)
 		.OnCheckStateChanged(this, &FOutlinerSelectionLock::OnActorSelectionLockCheckBoxStateChanged,
 		                     ActorTreeItem->Actor);
 	return CreatedWidget;

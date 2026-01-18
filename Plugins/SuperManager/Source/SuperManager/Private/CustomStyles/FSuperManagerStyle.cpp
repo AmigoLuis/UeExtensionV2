@@ -30,6 +30,7 @@ FName FSuperManagerStyle::DeleteEmptyFoldersIconName = FName("DeleteEmptyFolders
 FName FSuperManagerStyle::AdvancedDeletionIconName = FName("AdvancedDeletion");
 FName FSuperManagerStyle::SelectionLockIconName = FName("SelectionLock");
 FName FSuperManagerStyle::SelectionUnlockIconName = FName("SelectionUnlock");
+FName FSuperManagerStyle::SelectionLockToggleButtonIconName = FName("SelectionLockToggleButton");
 TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreatedSlateStyleSet = nullptr;
 TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreateSlateStyleSet()
 {
@@ -53,6 +54,19 @@ TSharedPtr<FSlateStyleSet> FSuperManagerStyle::CreateSlateStyleSet()
 	SetIconsLambda(AdvancedDeletionIconName);
 	SetIconsLambda(SelectionLockIconName);
 	SetIconsLambda(SelectionUnlockIconName);
+	
+	const FString& InImageName = PluginResourceDir / IconFolder / SelectionLockIconName.ToString() + IconFileSuffix;
+	const FCheckBoxStyle& CheckBoxStyle = FCheckBoxStyle()
+	.SetCheckBoxType(ESlateCheckBoxType::Type::ToggleButton).SetPadding(FMargin(10.0f))
+	// unchecked
+	.SetUncheckedImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::AccentGreen))
+	.SetUncheckedHoveredImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::White25))
+	.SetUncheckedPressedImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::AccentYellow))
+	// checked
+	.SetCheckedImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::AccentGray))
+	.SetCheckedHoveredImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::AccentWhite))
+	.SetCheckedPressedImage(FSlateImageBrush(InImageName, IconSize, FStyleColors::Foreground));
+	CustomSlateStyleSet->Set(SelectionLockToggleButtonIconName,CheckBoxStyle);
 	return CustomSlateStyleSet;
 }
 

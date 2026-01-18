@@ -18,6 +18,7 @@ public:
 	static FName GetAdvancedDeletionIconName() { return AdvancedDeletionIconName; }
 	static FName GetSelectionLockIconName() { return SelectionLockIconName; }
 	static FName GetSelectionUnlockIconName() { return SelectionUnlockIconName; }
+	static FName GetSelectionLockToggleButtonIconName() { return SelectionLockToggleButtonIconName; }
 	
 	static TSharedPtr<FSlateStyleSet> GetCreatedSlateStyleSet();
 private:
@@ -27,6 +28,7 @@ private:
 	static FName AdvancedDeletionIconName;
 	static FName SelectionLockIconName;
 	static FName SelectionUnlockIconName;
+	static FName SelectionLockToggleButtonIconName;
 	static TSharedPtr<FSlateStyleSet> CreateSlateStyleSet();
 	static TSharedPtr<FSlateStyleSet> CreatedSlateStyleSet;
 };
