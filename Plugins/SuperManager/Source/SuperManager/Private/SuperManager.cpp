@@ -37,6 +37,7 @@ void FSuperManagerModule::ShutdownModule()
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(AdvancedDeletionTabID);
 	FSuperManagerStyle::DeInitializeIcons();
 	FSuperManagerUICommands::Unregister();
+	DeInitSceneOutlinerColumnExtension();
 }
 
 
@@ -214,6 +215,11 @@ void FSuperManagerModule::AddCBMenuEntry(FMenuBuilder& MenuBuilder)
 void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	if (CreatedAdvancedDeletionTab.IsValid())
+	{
+		ShowMessageDialog(TEXT("Operation canceled cause 'Advanced Deletion Tab' is still open."));
+		return;
+	}
 	if (SelectedFolders.Num() != 1)
 	{
 		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
@@ -267,6 +273,11 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	if (CreatedAdvancedDeletionTab.IsValid())
+	{
+		ShowMessageDialog(TEXT("Operation canceled cause 'Advanced Deletion Tab' is still open."));
+		return;
+	}
 	if (SelectedFolders.Num() != 1)
 	{
 		ShowMessageDialog(TEXT("Better select 1 folder to avoid some issues."), false);
@@ -398,12 +409,22 @@ void FSuperManagerModule::RegisterAdvancedDeletionTab()
 
 TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs)
 {
-	return SNew(SDockTab).TabRole(NomadTab)
+	if (SelectedFolders.IsEmpty()) return SNew(SDockTab).TabRole(NomadTab);
+	CreatedAdvancedDeletionTab = SNew(SDockTab).TabRole(NomadTab)
 		[
 			SNew(SAdvancedDeletionWidget)
 			.AllAssetsDataToStore(GetAllAssetDataUnderSelectedFolder())
 			.CurrentFolderPath(MakeShared<FString>(SelectedFolders[0]))
 		];
+	
+	CreatedAdvancedDeletionTab->SetOnTabClosed(
+		SDockTab::FOnTabClosedCallback::CreateLambda(
+			[this](TSharedRef<SDockTab> ClosingTab)
+			{
+				this->CreatedAdvancedDeletionTab.Reset();
+				this->SelectedFolders.Empty();
+			}));
+	return CreatedAdvancedDeletionTab.ToSharedRef();
 }
 #pragma endregion CustomEditorTab
 
@@ -505,9 +526,10 @@ void FSuperManagerModule::InitCustomUICommands()
 #pragma endregion CustomUICommands
 
 #pragma region SceneOutlinerExtension
+#define SceneOutlinerModuleName TEXT("SceneOutliner")
 void FSuperManagerModule::InitSceneOutlinerColumnExtension()
 {
-	FSceneOutlinerModule* SceneOutlinerModulePtr = LoadModulePtrWithLog<FSceneOutlinerModule>(TEXT("SceneOutliner"));
+	FSceneOutlinerModule* SceneOutlinerModulePtr = LoadModulePtrWithLog<FSceneOutlinerModule>(SceneOutlinerModuleName);
 	if (!SceneOutlinerModulePtr) return;
 	const FSceneOutlinerColumnInfo SelectionLockColumnInfo(ESceneOutlinerColumnVisibility::Visible, 0,
 	                                                       FCreateSceneOutlinerColumn::CreateLambda(
@@ -517,6 +539,13 @@ void FSuperManagerModule::InitSceneOutlinerColumnExtension()
 				                                                       new FOutlinerSelectionLock(SceneOutliner));
 		                                                       }));
 	SceneOutlinerModulePtr->RegisterDefaultColumnType<FOutlinerSelectionLock>(SelectionLockColumnInfo);
+}
+
+void FSuperManagerModule::DeInitSceneOutlinerColumnExtension()
+{
+	FSceneOutlinerModule* SceneOutlinerModulePtr = LoadModulePtrWithLog<FSceneOutlinerModule>(SceneOutlinerModuleName);
+	if (!SceneOutlinerModulePtr) return;
+	SceneOutlinerModulePtr->UnRegisterColumnType<FOutlinerSelectionLock>();
 }
 #pragma endregion SceneOutlinerExtension
 #undef LOCTEXT_NAMESPACE

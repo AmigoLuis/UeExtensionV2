@@ -40,6 +40,7 @@ private:
 #pragma region CustomEditorTab
 	void RegisterAdvancedDeletionTab();
 	static const TCHAR* AdvancedDeletionTabID;
+	TSharedPtr<SDockTab> CreatedAdvancedDeletionTab; 
 	TSharedRef<SDockTab> FOnSpawnAdvancedDeletionTab(const FSpawnTabArgs& SpawnTabArgs);
 #pragma endregion CustomEditorTab
 	
@@ -59,5 +60,6 @@ private:
 	
 #pragma region SceneOutlinerExtension
 	void InitSceneOutlinerColumnExtension();
+	void DeInitSceneOutlinerColumnExtension();
 #pragma endregion SceneOutlinerExtension
 };
