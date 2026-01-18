@@ -22,7 +22,6 @@ private:
 	void AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder);
 	void OnLockSelectedObjectButtonClicked();
 	void OnUnLockSelectedObjectButtonClicked();
-	TArray<AActor*> SelectedActors;
 #pragma endregion LevelMenuExtention
 	
 #pragma region ContentBrowserMenuExtention 
@@ -50,4 +49,9 @@ private:
 	TWeakObjectPtr<UEditorActorSubsystem> EditorActorSubsystem;
 	bool GetEditorActorSubsystem();
 #pragma endregion ObjectSelection
+	
+#pragma region CustomUICommands
+	TSharedPtr<FUICommandList> CustomUICommands;
+	void InitCustomUICommands();
+#pragma endregion CustomUICommands
 };

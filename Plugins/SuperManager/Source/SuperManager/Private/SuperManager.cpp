@@ -11,6 +11,7 @@
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
+#include "CustomUICommands/SuperManagerUICommands.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -18,6 +19,8 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	FSuperManagerStyle::InitializeIcons();
+	FSuperManagerUICommands::Register();
+	InitCustomUICommands();
 	InitLevelMenuExtension();
 	InitCBMenuExtension();
 	InitObjectSelection();
@@ -30,9 +33,9 @@ void FSuperManagerModule::ShutdownModule()
 	// we call this function before unloading the module.
 	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(AdvancedDeletionTabID);
 	FSuperManagerStyle::DeInitializeIcons();
+	FSuperManagerUICommands::Unregister();
 }
 
-#undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSuperManagerModule, SuperManager)
 
@@ -43,6 +46,11 @@ void FSuperManagerModule::InitLevelMenuExtension()
 	FLevelEditorModule* LevelEditorModulePtr = LoadModulePtrWithLog<
 		FLevelEditorModule>(TEXT("LevelEditor"));
 	if (!LevelEditorModulePtr) return;
+
+	const TSharedRef<FUICommandList>& GlobalLevelEditorActions = 
+		LevelEditorModulePtr->GetGlobalLevelEditorActions();
+	GlobalLevelEditorActions->Append(CustomUICommands.ToSharedRef());
+	
 	TArray<FSelectedActors>& LevelViewPortMenuExtenders = LevelEditorModulePtr->
 		GetAllLevelViewportContextMenuExtenders();
 	LevelViewPortMenuExtenders.Add(
@@ -54,7 +62,6 @@ TSharedRef<FExtender> FSuperManagerModule::CreateLevelViewportMenuExtender(TShar
 	TArray<AActor*> InSelectedActors)
 {
 	TSharedRef<FExtender> Extender = MakeShareable(new FExtender);
-	SelectedActors = InSelectedActors;
 	if (InSelectedActors.Num() > 0)
 	{
 		Extender->AddMenuExtension(
@@ -90,8 +97,10 @@ void FSuperManagerModule::AddLevelViewMenuEntry(FMenuBuilder& MenuBuilder)
 void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
 {
 	LOG_ENTER_FUNCTION();
+	if (!GetEditorActorSubsystem()) return;
 	uint8 NumOfLockedObjects = 0;
-	for (AActor* SelectedActor : SelectedActors)
+	for (TArray<AActor*> SelectedActors = EditorActorSubsystem->GetSelectedLevelActors(); 
+		AActor* SelectedActor : SelectedActors)
 	{
 		if (SelectedActor == nullptr) continue;
 		if (!SelectedActor->ActorHasTag(LockedObjectSelectionTag))
@@ -433,3 +442,17 @@ bool FSuperManagerModule::GetEditorActorSubsystem()
 	return EditorActorSubsystem.IsValid();
 }
 #pragma endregion ObjectSelection
+
+#pragma region CustomUICommands
+void FSuperManagerModule::InitCustomUICommands()
+{
+	CustomUICommands = MakeShareable(new FUICommandList);
+	CustomUICommands->MapAction(FSuperManagerUICommands::Get().LockActorSelectionCommandInfo,
+	                            FExecuteAction::CreateRaw(
+		                            this, &FSuperManagerModule::OnLockSelectedObjectButtonClicked));
+	CustomUICommands->MapAction(FSuperManagerUICommands::Get().UnlockActorSelectionCommandInfo,
+	                            FExecuteAction::CreateRaw(
+		                            this, &FSuperManagerModule::OnUnLockSelectedObjectButtonClicked));
+}
+#pragma endregion CustomUICommands
+#undef LOCTEXT_NAMESPACE
