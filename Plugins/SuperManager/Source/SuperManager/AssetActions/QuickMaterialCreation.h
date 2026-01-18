@@ -26,7 +26,7 @@ private:
 	static const FString DefaultMaterialName;
 	static const FString Texture2DPrefix;
 public:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="CreateMaterialFromSelectedTextures")
 	void CreateMaterialFromSelectedTextures();
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CreateMaterialFromSelectedTextures", meta=(EditCondition="bUseCustomMaterialName"))
 	FString MaterialName = DefaultMaterialName;

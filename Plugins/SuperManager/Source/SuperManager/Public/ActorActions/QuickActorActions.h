@@ -26,7 +26,7 @@ class SUPERMANAGER_API UQuickActorActions : public UEditorUtilityWidget
 public:	
 	
 #pragma region ActorsBatchRandomizeTransform
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="ActorsBatchRandomizeTransform")
 	void ActorsBatchRandomizeTransform();
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchRandomizeTransform")
 	TMap<EBatchActorActionAxis, FVector2D> AxisAndAngleRangeOfBatchRandomizeTransform =
@@ -55,7 +55,7 @@ public:
 	bool RandomizeActorScale(AActor* Actor);
 #pragma endregion ActorsBatchRandomizeTransform
 #pragma region ActorsBatchDuplication
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="ActorsBatchDuplication")
 	void ActorsBatchDuplication();
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorsBatchDuplication")
 	uint8 TimeOfDuplication;
@@ -66,7 +66,7 @@ public:
 	bool IsDuplicationParamsValid();
 #pragma endregion ActorsBatchDuplication
 #pragma region ActorsBatchSelection
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category="ActorBatchSelection")
 	void ActorsBatchSelection();
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="ActorBatchSelection")
 	TEnumAsByte<ESearchCase::Type> SearchCase = ESearchCase::IgnoreCase;
