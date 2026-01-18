@@ -122,6 +122,7 @@ void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
 	{
 		ShowMessageDialog(TEXT("Not lock any object's selection."));
 	}
+	RefreshSceneOutliner();
 }
 
 void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
@@ -148,6 +149,7 @@ void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
 	{
 		ShowMessageDialog(TEXT("Not unlock any object's selection."));
 	}
+	RefreshSceneOutliner();
 }
 #pragma endregion LevelMenuExtention
 
@@ -470,6 +472,22 @@ bool FSuperManagerModule::GetEditorActorSubsystem()
 		EditorActorSubsystem_WeakObjectPtr = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
 	}
 	return EditorActorSubsystem_WeakObjectPtr.IsValid();
+}
+
+void FSuperManagerModule::RefreshSceneOutliner()
+{
+	const FLevelEditorModule* LevelEditorModulePtr = LoadModulePtrWithLog<
+		FLevelEditorModule>(TEXT("LevelEditor"));
+	if (!LevelEditorModulePtr) return;
+	TArray<TWeakPtr<ISceneOutliner>> SceneOutliners = LevelEditorModulePtr->GetFirstLevelEditor()->
+	                                                                        GetAllSceneOutliners();
+	for (TWeakPtr SceneOutliner : SceneOutliners)
+	{
+		if (SceneOutliner.IsValid())
+		{
+			SceneOutliner.Pin()->FullRefresh();
+		}
+	}
 }
 #pragma endregion ObjectSelection
 

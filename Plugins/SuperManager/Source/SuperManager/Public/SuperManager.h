@@ -49,6 +49,7 @@ private:
 	void LockOrUnlockObjectSelectionEvent(UObject* SelectedObject);
 	TWeakObjectPtr<UEditorActorSubsystem> EditorActorSubsystem_WeakObjectPtr;
 	bool GetEditorActorSubsystem();
+	static void RefreshSceneOutliner();
 #pragma endregion ObjectSelection
 	
 #pragma region CustomUICommands
