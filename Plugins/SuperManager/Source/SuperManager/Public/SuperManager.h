@@ -13,6 +13,8 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+	const static FName LockedObjectSelectionTag;
+	void SetObjectSelectionLockState(AActor* ActorToSet, bool bShouldBeLocked);
 private:
 #pragma region LevelMenuExtension
 	void InitLevelMenuExtension();
@@ -43,10 +45,9 @@ private:
 	
 	
 #pragma region ObjectSelection
-	const FName LockedObjectSelectionTag = FName("LockedObjectSelection");
 	void InitObjectSelection();
 	void LockOrUnlockObjectSelectionEvent(UObject* SelectedObject);
-	TWeakObjectPtr<UEditorActorSubsystem> EditorActorSubsystem;
+	TWeakObjectPtr<UEditorActorSubsystem> EditorActorSubsystem_WeakObjectPtr;
 	bool GetEditorActorSubsystem();
 #pragma endregion ObjectSelection
 	

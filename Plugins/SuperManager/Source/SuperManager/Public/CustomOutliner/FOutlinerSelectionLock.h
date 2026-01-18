@@ -15,5 +15,5 @@ public:
 	virtual SHeaderRow::FColumn::FArguments ConstructHeaderRowColumn() override;
 	virtual const TSharedRef<SWidget> ConstructRowWidget(FSceneOutlinerTreeItemRef TreeItem,
 		const STableRow<FSceneOutlinerTreeItemPtr>& Row) override;
-	
+	void OnActorSelectionLockCheckBoxStateChanged(ECheckBoxState NewCheckBoxState, TWeakObjectPtr<AActor> ChangedActor);
 };

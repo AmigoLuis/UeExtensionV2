@@ -102,14 +102,14 @@ void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
 	LOG_ENTER_FUNCTION();
 	if (!GetEditorActorSubsystem()) return;
 	uint8 NumOfLockedObjects = 0;
-	for (TArray<AActor*> SelectedActors = EditorActorSubsystem->GetSelectedLevelActors(); 
+	for (TArray<AActor*> SelectedActors = EditorActorSubsystem_WeakObjectPtr->GetSelectedLevelActors(); 
 		AActor* SelectedActor : SelectedActors)
 	{
 		if (SelectedActor == nullptr) continue;
 		if (!SelectedActor->ActorHasTag(LockedObjectSelectionTag))
 		{
 			SelectedActor->Tags.Add(LockedObjectSelectionTag);
-			EditorActorSubsystem->SetActorSelectionState(SelectedActor, false);
+			EditorActorSubsystem_WeakObjectPtr->SetActorSelectionState(SelectedActor, false);
 			++NumOfLockedObjects;
 		}
 	}
@@ -129,7 +129,7 @@ void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
 	LOG_ENTER_FUNCTION();
 	if (!GetEditorActorSubsystem()) return;
 	uint8 NumOfUnlockedObjects = 0;
-	for (const TArray<AActor*>& AllLevelActors = EditorActorSubsystem->GetAllLevelActors(); 
+	for (const TArray<AActor*>& AllLevelActors = EditorActorSubsystem_WeakObjectPtr->GetAllLevelActors(); 
 		AActor* SelectedActor : AllLevelActors)
 	{
 		if (SelectedActor == nullptr) continue;
@@ -406,6 +406,33 @@ TSharedRef<SDockTab> FSuperManagerModule::FOnSpawnAdvancedDeletionTab(const FSpa
 #pragma endregion CustomEditorTab
 
 #pragma region ObjectSelection
+const FName FSuperManagerModule::LockedObjectSelectionTag = FName("LockedObjectSelection");
+
+void FSuperManagerModule::SetObjectSelectionLockState(AActor* ActorToSet, const bool bShouldBeLocked)
+{
+	if (!ActorToSet || !GetEditorActorSubsystem()) return;
+	if (bShouldBeLocked)
+	{
+		if (!ActorToSet->ActorHasTag(LockedObjectSelectionTag))
+		{
+			ActorToSet->Tags.Add(LockedObjectSelectionTag);
+			EditorActorSubsystem_WeakObjectPtr->SetActorSelectionState(ActorToSet, false);
+			ShowNotifyInfo(FString::Format(
+				TEXT("Actor: {0}'s selection is locked"), 
+				{ActorToSet->GetActorLabel()}));
+		}
+	}
+	else
+	{
+		if (ActorToSet->ActorHasTag(LockedObjectSelectionTag))
+		{
+			ActorToSet->Tags.Remove(LockedObjectSelectionTag);
+			ShowNotifyInfo(FString::Format(
+				TEXT("Actor: {0}'s selection is unlocked"), 
+				{ActorToSet->GetActorLabel()}));
+		}
+	}
+}
 
 void FSuperManagerModule::InitObjectSelection()
 {
@@ -419,7 +446,7 @@ void FSuperManagerModule::LockOrUnlockObjectSelectionEvent(UObject* SelectedObje
 	{
 		if (InSelectedActor->ActorHasTag(LockedObjectSelectionTag))
 		{
-			EditorActorSubsystem->SetActorSelectionState(InSelectedActor, false);
+			EditorActorSubsystem_WeakObjectPtr->SetActorSelectionState(InSelectedActor, false);
 			PrintInLog(FString::Format(
 				TEXT("Actor: {0} can not be selected in level cause its' selection is locked"), 
 				{InSelectedActor->GetActorLabel()}));
@@ -438,11 +465,11 @@ void FSuperManagerModule::LockOrUnlockObjectSelectionEvent(UObject* SelectedObje
 }
 bool FSuperManagerModule::GetEditorActorSubsystem()
 {
-	if (!EditorActorSubsystem.IsValid())
+	if (!EditorActorSubsystem_WeakObjectPtr.IsValid())
 	{
-		EditorActorSubsystem = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
+		EditorActorSubsystem_WeakObjectPtr = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
 	}
-	return EditorActorSubsystem.IsValid();
+	return EditorActorSubsystem_WeakObjectPtr.IsValid();
 }
 #pragma endregion ObjectSelection
 
