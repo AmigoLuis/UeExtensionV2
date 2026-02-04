@@ -1,0 +1,2 @@
+advanced_master 是 基于 master 分支， 继续开发ue编辑器功能的主分支，原master 分支不应该再更新
+后续功能分支都应该只合入advanced_master
