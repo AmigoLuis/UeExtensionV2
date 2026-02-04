@@ -116,7 +116,7 @@ void FSuperManagerModule::OnLockSelectedObjectButtonClicked()
 	}
 	if (NumOfLockedObjects > 0)
 	{
-		ShowNotifyInfo(FString::Format(TEXT("Locked {0} objects's selection."), 
+		ShowNotifyInfo(FString::Format(TEXT("Locked {0} objects' selection."), 
 			{NumOfLockedObjects}));
 	}
 	else
@@ -143,7 +143,7 @@ void FSuperManagerModule::OnUnLockSelectedObjectButtonClicked()
 	}
 	if (NumOfUnlockedObjects > 0)
 	{
-		ShowNotifyInfo(FString::Format(TEXT("Unlocked {0} objects's selection."), 
+		ShowNotifyInfo(FString::Format(TEXT("Unlocked {0} objects' selection."), 
 			{NumOfUnlockedObjects}));
 	}
 	else
@@ -471,7 +471,7 @@ void FSuperManagerModule::LockOrUnlockObjectSelectionEvent(UObject* SelectedObje
 		{
 			EditorActorSubsystem_WeakObjectPtr->SetActorSelectionState(InSelectedActor, false);
 			PrintInLog(FString::Format(
-				TEXT("Actor: {0} can not be selected in level cause its' selection is locked"), 
+				TEXT("Actor: {0} can not be selected in level cause its selection is locked"), 
 				{InSelectedActor->GetActorLabel()}));
 		}
 	}
