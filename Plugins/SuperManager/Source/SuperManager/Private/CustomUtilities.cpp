@@ -46,7 +46,7 @@ TArray<TSharedPtr<FAssetData>> FilteredOutDeletedAssetsData(
 	for (FName AssetNameAlreadyDeleted : AssetsNameAlreadyDeleted)
 	{
 		PrintInLog(TEXT("Asset: \"") + AssetNameAlreadyDeleted.ToString() + TEXT("\" is deleted."),
-				   SuperManager::Display);
+				   Display);
 	}
 	// 如果没有全部删除，就展示哪些没有删除成功
 	if (!AssetsNameNotDeleted.IsEmpty())
@@ -95,7 +95,7 @@ void SyncToAssetInContentBrowser(const FAssetData& AssetData)
 {
 	FString AssetObjectPath = AssetData.GetObjectPathString();
 	UEditorAssetLibrary::SyncBrowserToObjects({AssetObjectPath});
-	PrintInLog(TEXT("ContentBrowser is sync to: ") + AssetObjectPath, SuperManager::Verbose);
+	PrintInLog(TEXT("ContentBrowser is sync to: ") + AssetObjectPath, Verbose);
 }
 
 FString GetAssetPrefixByAssetClass(const UClass* AssetClass)

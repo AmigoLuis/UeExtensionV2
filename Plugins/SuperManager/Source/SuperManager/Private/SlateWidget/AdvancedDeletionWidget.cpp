@@ -112,7 +112,7 @@ TSharedRef<STextBlock> SAdvancedDeletionWidget::CreateHelpTextBlockForAdvancedDe
 void SAdvancedDeletionWidget::OnListConditionSelectionChanged(TSharedPtr<FString> SelectedListCondition,
                                                               ESelectInfo::Type InSelectionInfo)
 {
-	PrintInLog(*SelectedListCondition, SuperManager::ELogLevel::Display);
+	PrintInLog(*SelectedListCondition, Display);
 	ComboDisplayTextBlock->SetText(FText::FromString(*SelectedListCondition));
 	// SListView->RequestListRefresh方法调用后，
 	// 如果原来的row对应的数据不在ListItemsSource中会取消row的引用，
@@ -276,18 +276,18 @@ void SAdvancedDeletionWidget::OnCheckBoxStateChanged(ECheckBoxState CheckBoxStat
 	switch (CheckBoxState)
 	{
 		case ECheckBoxState::Checked:
-		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is checked."), SuperManager::Verbose);
+		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is checked."), Verbose);
 		DisplayedSelectedAssetsData.AddUnique(AssetData);
 		break;
 	case ECheckBoxState::Unchecked:
-		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unchecked."), SuperManager::Verbose);
+		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unchecked."), Verbose);
 		DisplayedSelectedAssetsData.Remove(AssetData);
 		break;
 	case ECheckBoxState::Undetermined:
-		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is undetermined."), SuperManager::Display);
+		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is undetermined."), Display);
 		break;
 	default:
-		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unknown."), SuperManager::Display);
+		PrintInLog(AssetData->AssetName.ToString() + TEXT(" is unknown."), Display);
 		break;
 	}
 }

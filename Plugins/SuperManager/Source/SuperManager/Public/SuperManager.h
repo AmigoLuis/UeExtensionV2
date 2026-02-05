@@ -62,4 +62,25 @@ private:
 	void InitSceneOutlinerColumnExtension();
 	void DeInitSceneOutlinerColumnExtension();
 #pragma endregion SceneOutlinerExtension
+	
+#pragma region Settings
+	void OnAssetCreated(const FAssetData& AssetData);
+	void OnAssetRenamed(const FAssetData& AssetData, const FString& NewName);
+	// 编辑器委托
+	FDelegateHandle OnAssetCreatedDelegateHandle;
+	FDelegateHandle OnAssetRenamedDelegateHandle;
+	
+	// 项目设置相关
+	static const FName SettingsSectionName;
+    
+	// 默认命名配置
+	static FString DefaultBlueprintName;
+	static bool bUseCustomNaming;
+	static bool bUseTimestamp;
+	static bool bUseProjectPrefix;
+	static FString ProjectPrefix;
+	// 注册、注销 开发者设置（就是加到项目设置里面的自定义设置）
+	void RegisterSettings();
+	void UnRegisterSettings();
+#pragma endregion Settings
 };

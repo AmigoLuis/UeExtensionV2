@@ -2,6 +2,11 @@ Binaries
 DerivedDataCache
 Intermediate
 Saved
+Plugins
+!Plugins/SuperManager/
+Content
+!Content/TestTextures/*
+!Content/TestMap/MyQuickAssetActionUtility.uasset
 .vscode
 .vs
 *.VC.db

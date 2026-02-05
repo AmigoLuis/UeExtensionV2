@@ -25,7 +25,7 @@ public class SuperManager : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core", "AssetRegistry", "AssetTools", "InputCore", "EditorScriptingUtilities", "Projects", "MaterialEditor", "SceneOutliner"
+				"Core", "AssetRegistry", "AssetTools", "InputCore", "EditorScriptingUtilities", "Projects", "MaterialEditor", "SceneOutliner", "UE_DebugUtilities"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,7 +38,7 @@ public class SuperManager : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore", "Blutility", "EditorScriptingUtilities", "UMGEditor", "Niagara", "UMG", "PhysicsCore", 
-				"UnrealEd", 
+				"UnrealEd", "ToolMenus", "UE_DebugUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

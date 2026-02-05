@@ -76,7 +76,7 @@ TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 					*InModuleName.ToString(), GetTypeNameInTemplate<TModuleInterface>(),
 					GetModuleLoadFailureReason(OutFailureReason)
 				}),
-				SuperManager::ELogLevel::Fatal);
+				Fatal);
 	}
 	else
 	{
@@ -85,7 +85,7 @@ TModuleInterface* LoadModulePtrWithLog(const FName InModuleName)
 				TEXT("Successfully loaded module. module name: {0} ,module ptr type: {1}."), {
 					*InModuleName.ToString(), GetTypeNameInTemplate<TModuleInterface>()
 				}),
-				SuperManager::ELogLevel::Display);
+				Display);
 	}
 	return AssetRegistryModulePtr;
 }
@@ -157,7 +157,7 @@ inline int32 DeleteAssetsAndLog(const TArray<FAssetData>& AssetsDataToDelete)
 {
 	const int32 DeletedAssetsNum = ObjectTools::DeleteAssets(AssetsDataToDelete);
 	PrintInLog(TEXT("Deleted ") + FString::FromInt(DeletedAssetsNum) + TEXT(" Assets."),
-				SuperManager::Display);
+				Display);
 	FixUpRedirectors();
 	return DeletedAssetsNum;
 } 
@@ -168,12 +168,12 @@ inline int32 DeleteAssetsAndLog(const FAssetData& AssetDataToDelete)
 	if (DeletedAssetsNum > 0)
 	{
 		PrintInLog(AssetDataToDelete.AssetName.ToString() + TEXT(" is deleted."),
-SuperManager::Display);
+Display);
 	}
 	else
 	{
 		PrintInLog(TEXT("Failed to delete asset :") + AssetDataToDelete.AssetName.ToString() + TEXT("."),
-SuperManager::Error);
+Error);
 	}
 	return DeletedAssetsNum;
 } 

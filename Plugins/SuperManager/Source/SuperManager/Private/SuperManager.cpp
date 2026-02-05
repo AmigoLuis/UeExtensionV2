@@ -2,18 +2,23 @@
 
 #include "SuperManager.h"
 
+#include "AssetToolsModule.h"
 #include "ContentBrowserModule.h"
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
+#include "ISettingsModule.h"
 #include "LevelEditor.h"
 #include "SceneOutlinerModule.h"
 #include "Selection.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "CustomOutliner/FOutlinerSelectionLock.h"
 #include "CustomStyles/FSuperManagerStyle.h"
 #include "SlateWidget/AdvancedDeletionWidget.h"
 #include "Subsystems/EditorActorSubsystem.h"
 #include "CustomUICommands/SuperManagerUICommands.h"
+#include "Kismet2/KismetEditorUtilities.h"
+#include "SuperManager/AssetActions/Settings/BPDefaultNameSettings.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -28,6 +33,18 @@ void FSuperManagerModule::StartupModule()
 	InitObjectSelection();
 	RegisterAdvancedDeletionTab();
 	InitSceneOutlinerColumnExtension();
+	
+#pragma region RegisterSettingsForModifyDefaultBlueprintName
+	RegisterSettings();
+ 
+	// 注册委托
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	OnAssetCreatedDelegateHandle = AssetRegistryModule.Get().OnAssetAdded().AddRaw(
+	this, &FSuperManagerModule::OnAssetCreated);
+	OnAssetRenamedDelegateHandle = AssetRegistryModule.Get().OnAssetRenamed().AddRaw(
+		this, &FSuperManagerModule::OnAssetRenamed);
+    
+#pragma endregion RegisterSettingsForModifyDefaultBlueprintName
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -38,6 +55,20 @@ void FSuperManagerModule::ShutdownModule()
 	FSuperManagerStyle::DeInitializeIcons();
 	FSuperManagerUICommands::Unregister();
 	DeInitSceneOutlinerColumnExtension();
+	{
+		
+		// 取消注册委托
+		if (FModuleManager::Get().IsModuleLoaded("AssetRegistry"))
+		{
+			FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
+			AssetRegistryModule.Get().OnAssetAdded().Remove(OnAssetCreatedDelegateHandle);
+			AssetRegistryModule.Get().OnAssetAdded().Remove(OnAssetRenamedDelegateHandle);
+		}
+    
+		// 取消注册设置
+		UnRegisterSettings();
+    
+	}
 }
 
 
@@ -228,7 +259,7 @@ void FSuperManagerModule::OnDeleteUnusedAssetsButtonClicked()
 	const FString& CurrentSelectedFolder = SelectedFolders[0];
 	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") +
 	           CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__),
-	           SuperManager::ELogLevel::Display);
+	           Display);
 	TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
 	if (AssetPaths.IsEmpty())
 	{
@@ -363,7 +394,7 @@ TArray<TSharedPtr<FAssetData>> FSuperManagerModule::GetAllAssetDataUnderSelected
 	const FString& CurrentSelectedFolder = SelectedFolders[0];
 	PrintInLog(SYMBOL_NAME_TEXT(CurrentSelectedFolder)TEXT(" : ") +
 			   CurrentSelectedFolder + TEXT(" in Func:") TEXT(__FUNCTION__),
-			   SuperManager::ELogLevel::Display);
+			   Display);
 	TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssets(CurrentSelectedFolder);
 	if (AssetPaths.IsEmpty())
 	{
@@ -548,4 +579,40 @@ void FSuperManagerModule::DeInitSceneOutlinerColumnExtension()
 	SceneOutlinerModulePtr->UnRegisterColumnType<FOutlinerSelectionLock>();
 }
 #pragma endregion SceneOutlinerExtension
+
+#pragma region Settings
+
+void FSuperManagerModule::OnAssetCreated(const FAssetData& AssetData)
+{
+	PrintInLog(TEXT("AssetCreated:") + AssetData.GetFullName());
+}
+
+void FSuperManagerModule::OnAssetRenamed(const FAssetData& AssetData, const FString& NewName)
+{
+	PrintInLog(TEXT("AssetRenamed: ") + AssetData.GetFullName() + TEXT(", Asset new name:") + NewName);
+}
+
+void FSuperManagerModule::RegisterSettings()
+{
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->RegisterSettings("Project", "Plugins", 
+			"Blueprint Default Name",
+			LOCTEXT("RuntimeSettingsName", "Blueprint Default Name"),
+			LOCTEXT("RuntimeSettingsDescription", "Configure default naming for Blueprints"),
+			GetMutableDefault<UBPDefaultNameSettings>()
+		);
+	}
+}
+
+void FSuperManagerModule::UnRegisterSettings()
+{
+	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		SettingsModule->UnregisterSettings("Project", 
+			"Plugins", "Blueprint Default Name");
+	}
+}
+#pragma endregion Settings
+
 #undef LOCTEXT_NAMESPACE
