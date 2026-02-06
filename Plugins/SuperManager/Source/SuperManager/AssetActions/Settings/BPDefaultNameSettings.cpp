@@ -9,16 +9,10 @@ UBPDefaultNameSettings::UBPDefaultNameSettings()
 	// 默认设置
 	bEnablePlugin = true;
 	DefaultBlueprintName = TEXT("NewBlueprint");
-	bUseProjectPrefix = false;
-	ProjectPrefix = TEXT("MyProject");
-	bUseTimestamp = false;
+	bUseBlueprintPrefix = true;
+	BlueprintPrefix = TEXT("BP_");
 	bShowRenameNotification = true;
-	bAutoRenameExisting = false;
 	NamingPattern = TEXT("{Project}_{BaseName}_{Timestamp}");
-    
-	// 默认排除的父类
-	ExcludedParentClasses.Add(TEXT("Actor"));
-	ExcludedParentClasses.Add(TEXT("Pawn"));
 }
 
 #if WITH_EDITOR

@@ -1,0 +1,181 @@
+#include "FBlueprintAssetRenameHandler.h"
+
+#include "CheckAndLogAndReturn.h"
+#include "CustomUtilities.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "GameFramework/Character.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+
+bool FBlueprintAssetRenameHandler::IsBlueprintAsset(const FAssetData& AssetData)
+{
+    // 方法1：检查资产类名
+    const FString AssetClassName = AssetData.AssetClassPath.ToString();
+    
+    // 蓝图的主要类名
+    const static FString& BlueprintClassName = TEXT("Blueprint");
+    
+    if (AssetClassName.Contains(BlueprintClassName))
+    {
+        return true;
+    }
+    
+    // 方法2：检查对象是否是蓝图 // 开销较大，暂时不用
+    // UObject* AssetObject = AssetData.GetAsset();
+    // if (AssetObject)
+    // {
+    //     if (Cast<UBlueprint>(AssetObject) || Cast<UBlueprintGeneratedClass>(AssetObject))
+    //     {
+    //         return true;
+    //     }
+    // }
+    
+    return false;
+}
+
+void FBlueprintAssetRenameHandler::AnalyzeParentClass(UBlueprint* Blueprint, UClass* ParentClass)
+{
+    // 蓝图没有父类（这是ai写的代码，这可能吗。。）
+    CHECK_NULL_RETURN(ParentClass);
+    
+    const FString ParentClassName = ParentClass->GetName();
+    const FString ParentClassPath = ParentClass->GetPathName();
+    
+    PrintInLog(TEXT("父类名称: ") + ParentClassName, Display);
+    PrintInLog(TEXT("父类路径: ") + ParentClassPath, Display);
+    
+    // 判断是C++类还是蓝图类
+    if (IsBlueprintGeneratedClass(ParentClass))
+    {
+        PrintInLogDisplay(TEXT("父类为蓝图类。"));
+        {// 这段代码没有啥用，后面可以删除，目前用来看父类的一些信息
+#if 0
+            // 获取蓝图生成的类
+            if (const UBlueprintGeneratedClass* BlueprintParentClass = Cast<UBlueprintGeneratedClass>(ParentClass))
+            {
+                // 尝试获取源蓝图
+                if (const UBlueprint* SourceBlueprint = Cast<UBlueprint>(BlueprintParentClass->ClassGeneratedBy))
+                {
+                    PrintInLogVerbose(TEXT("父类蓝图名称: ") + SourceBlueprint->GetName());
+                    PrintInLogVerbose(TEXT("父类蓝图路径: ") + SourceBlueprint->GetPathName());
+                }
+            }
+#endif
+        }
+    }
+    else
+    {
+        PrintInLogDisplay(TEXT("父类不是蓝图类，假设为C++原生类。"));
+        {
+            // 这段代码没有啥用，后面可以删除，目前用来看父类的一些信息
+            if (bool HasAnyClassNativeFlags = ParentClass->HasAnyClassFlags(CLASS_Native))
+            {
+                PrintInLogDisplay(TEXT("父类很可能是C++原生类，具有原生类标签: ") SYMBOL_NAME_TEXT(CLASS_Native));
+            }
+            else
+            {
+                PrintInLogDisplay(TEXT("父类不具有原生类标签: ") SYMBOL_NAME_TEXT(CLASS_Native));
+            }
+        }
+    }
+}
+
+bool FBlueprintAssetRenameHandler::IsBlueprintGeneratedClass(UClass* Class)
+{
+    CHECK_NULL_RETURN_VALUE(Class, false);
+    
+    // 方法1：检查是否是蓝图生成的类
+    if (Class->IsChildOf(UBlueprintGeneratedClass::StaticClass()))
+    {
+        PrintInLog(TEXT("是蓝图生成的类"));
+        return true;
+    }
+    
+    // 方法2：检查类是否由蓝图生成
+    if (Class->ClassGeneratedBy && Cast<UBlueprint>(Class->ClassGeneratedBy))
+    {
+        PrintInLog(TEXT("由蓝图生成"));
+        return true;
+    }
+    
+    // 方法3：检查类标志
+    if (Class->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
+    {
+        PrintInLog(TEXT("类标志有蓝图编译类的标志"));
+        return true;
+    }
+    
+    return false;
+}
+
+// 如果是蓝图就处理，返回值表示是否处理过
+bool FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(const FAssetData& AssetData)
+{
+    constexpr bool bAssetNotProcessed = false;
+    constexpr bool bAssetProcessed = true;
+    // 打印资产路径
+	
+    // 判断是否是蓝图，不是蓝图的话直接返回，是蓝图的话，打印蓝图父类信息：是cpp中的类还是蓝图中的类，打印父类名称
+    // 资产类名
+    const FString AssetClassName = AssetData.AssetClassPath.ToString();
+    LOG_ENTER_FUNCTION();
+    PrintInLog(TEXT("资产类型: ") + AssetClassName, Display);
+    
+    // 判断是否是蓝图
+    if (!IsBlueprintAsset(AssetData))
+    {
+        PrintInLog(TEXT("不是蓝图资产，跳过处理"), Display);
+        return bAssetNotProcessed;
+    }
+	
+    PrintInLog(TEXT("这是蓝图资产，开始分析父类信息"), Display);
+    // 打印资产路径
+    const FString AssetPath = AssetData.GetObjectPathString();
+    const FString AssetName = AssetData.AssetName.ToString();
+    const FString PackagePath = AssetData.PackagePath.ToString();
+    PrintInLog(TEXT("资产名称: ") + AssetName, Display);
+    PrintInLog(TEXT("资产路径: ") + AssetPath, Display);
+    PrintInLog(TEXT("包路径: ") + PackagePath, Display);
+    
+    // 获取蓝图资产对象
+    UObject* AssetObject = AssetData.GetAsset();
+    // "无法获取蓝图资产对象，可能正在加载中"
+    CHECK_NULL_RETURN_VALUE(AssetObject, bAssetProcessed);
+    
+    // 可能不是有效的蓝图资产
+    UBlueprint* Blueprint = Cast<UBlueprint>(AssetObject);
+    CHECK_NULL_RETURN_VALUE(Blueprint, bAssetProcessed);
+    
+    // 获取父类
+    UClass* ParentClass = Blueprint->ParentClass;
+    // 蓝图没有父类（这是ai写的代码，这可能吗。。）
+    CHECK_NULL_RETURN_VALUE(ParentClass, bAssetProcessed);
+    
+    // 分析父类信息
+    AnalyzeParentClass(Blueprint, ParentClass);
+    return bAssetProcessed;
+}
+
+// TODO: 实现批量分析功能(目前只是ai生成的代码，未实际测试过)
+void FBlueprintAssetRenameHandler::AnalyzeAllBlueprintsInPath(const FString& Path)
+{
+
+	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<FAssetRegistryModule>("AssetRegistry");
+    CHECK_NULL_RETURN(AssetRegistryModulePtr);
+	FARFilter Filter;
+	Filter.PackagePaths.Add(*Path);
+	Filter.bRecursivePaths = true;
+    
+	// 只查找蓝图资产
+	Filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+	Filter.ClassPaths.Add(UBlueprintGeneratedClass::StaticClass()->GetClassPathName());
+    
+	TArray<FAssetData> AssetDataList;
+	AssetRegistryModulePtr->Get().GetAssets(Filter, AssetDataList);
+    
+	UE_LOG(LogTemp, Log, TEXT("在路径 %s 中找到 %d 个蓝图"), *Path, AssetDataList.Num());
+    
+	for (const FAssetData& AssetData : AssetDataList)
+	{
+		// OnAssetCreated(AssetData);
+	}
+}

@@ -2,8 +2,9 @@ Binaries
 DerivedDataCache
 Intermediate
 Saved
-Plugins
-!Plugins/SuperManager/
+Plugins/PackagedPlugin
+Plugins/UE_DebugUtilities
+
 Content
 !Content/TestTextures/*
 !Content/TestMap/MyQuickAssetActionUtility.uasset

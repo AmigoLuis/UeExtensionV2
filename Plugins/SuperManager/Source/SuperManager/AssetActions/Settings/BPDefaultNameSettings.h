@@ -25,17 +25,13 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
 	FString DefaultBlueprintName;
 
-	// 是否使用项目前缀
+	// 是否使用蓝图前缀
 	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
-	bool bUseProjectPrefix;
+	bool bUseBlueprintPrefix;
 
-	// 项目前缀
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bUseProjectPrefix"))
-	FString ProjectPrefix;
-
-	// 是否添加时间戳
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
-	bool bUseTimestamp;
+	// 蓝图前缀，一般是BP_
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bUseBlueprintPrefix"))
+	FString BlueprintPrefix;
 
 	// 命名模式
 	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
@@ -44,14 +40,6 @@ public:
 	// 是否显示通知
 	UPROPERTY(Config, EditAnywhere, Category = "Notifications")
 	bool bShowRenameNotification;
-
-	// 自动重命名现有NewBlueprint资产
-	UPROPERTY(Config, EditAnywhere, Category = "Advanced")
-	bool bAutoRenameExisting;
-
-	// 排除的父类
-	UPROPERTY(Config, EditAnywhere, Category = "Advanced")
-	TArray<FString> ExcludedParentClasses;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;

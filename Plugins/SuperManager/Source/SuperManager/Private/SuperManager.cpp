@@ -3,6 +3,7 @@
 #include "SuperManager.h"
 
 #include "AssetToolsModule.h"
+#include "CheckAndLogAndReturn.h"
 #include "ContentBrowserModule.h"
 #include "CustomUtilities.h"
 #include "DebugHeader.h"
@@ -18,6 +19,7 @@
 #include "Subsystems/EditorActorSubsystem.h"
 #include "CustomUICommands/SuperManagerUICommands.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "SuperManager/AssetActions/BlueprintAssetHandlers/FBlueprintAssetRenameHandler.h"
 #include "SuperManager/AssetActions/Settings/BPDefaultNameSettings.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
@@ -38,11 +40,17 @@ void FSuperManagerModule::StartupModule()
 	RegisterSettings();
  
 	// 注册委托
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	OnAssetCreatedDelegateHandle = AssetRegistryModule.Get().OnAssetAdded().AddRaw(
-	this, &FSuperManagerModule::OnAssetCreated);
-	OnAssetRenamedDelegateHandle = AssetRegistryModule.Get().OnAssetRenamed().AddRaw(
-		this, &FSuperManagerModule::OnAssetRenamed);
+
+	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<FAssetRegistryModule>("AssetRegistry");
+	CHECK_NULL_RETURN(AssetRegistryModulePtr);
+	AssetRegistryModulePtr->Get().OnFilesLoaded().AddLambda([this, AssetRegistryModulePtr]()
+	{
+		// 仅在初始扫描完成后再监听新增资产事件
+		OnAssetCreatedDelegateHandle = AssetRegistryModulePtr->Get().OnAssetAdded().AddRaw(
+			this, &FSuperManagerModule::OnAssetCreated);
+		OnAssetRenamedDelegateHandle = AssetRegistryModulePtr->Get().OnAssetRenamed().AddRaw(
+			this, &FSuperManagerModule::OnAssetRenamed);
+	});
     
 #pragma endregion RegisterSettingsForModifyDefaultBlueprintName
 }
@@ -56,17 +64,16 @@ void FSuperManagerModule::ShutdownModule()
 	FSuperManagerUICommands::Unregister();
 	DeInitSceneOutlinerColumnExtension();
 	{
-		
+		// 取消注册设置
+		UnRegisterSettings();
 		// 取消注册委托
 		if (FModuleManager::Get().IsModuleLoaded("AssetRegistry"))
 		{
-			FAssetRegistryModule& AssetRegistryModule = FModuleManager::GetModuleChecked<FAssetRegistryModule>("AssetRegistry");
-			AssetRegistryModule.Get().OnAssetAdded().Remove(OnAssetCreatedDelegateHandle);
-			AssetRegistryModule.Get().OnAssetAdded().Remove(OnAssetRenamedDelegateHandle);
+			const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<FAssetRegistryModule>("AssetRegistry");
+			CHECK_NULL_RETURN(AssetRegistryModulePtr);
+			AssetRegistryModulePtr->Get().OnAssetAdded().Remove(OnAssetCreatedDelegateHandle);
+			AssetRegistryModulePtr->Get().OnAssetAdded().Remove(OnAssetRenamedDelegateHandle);
 		}
-    
-		// 取消注册设置
-		UnRegisterSettings();
     
 	}
 }
@@ -490,6 +497,7 @@ void FSuperManagerModule::SetObjectSelectionLockState(AActor* ActorToSet, const 
 
 void FSuperManagerModule::InitObjectSelection()
 {
+	CHECK_NULL_RETURN(GEditor);
 	USelection* UserSelections = GEditor->GetSelectedActors();
 	UserSelections->SelectObjectEvent.AddRaw(this, &FSuperManagerModule::LockOrUnlockObjectSelectionEvent);
 }
@@ -583,8 +591,8 @@ void FSuperManagerModule::DeInitSceneOutlinerColumnExtension()
 #pragma region Settings
 
 void FSuperManagerModule::OnAssetCreated(const FAssetData& AssetData)
-{
-	PrintInLog(TEXT("AssetCreated:") + AssetData.GetFullName());
+{	
+	FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(AssetData);
 }
 
 void FSuperManagerModule::OnAssetRenamed(const FAssetData& AssetData, const FString& NewName)
