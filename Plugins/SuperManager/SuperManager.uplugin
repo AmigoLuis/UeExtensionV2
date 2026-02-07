@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.0",
+	"VersionName": "1.1",
 	"FriendlyName": "SuperManager",
 	"Description": "",
 	"Category": "Other",
@@ -19,6 +19,14 @@
 			"Name": "SuperManager",
 			"Type": "Editor",
 			"LoadingPhase": "PreDefault"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "UE_DebugUtilities",
+			"Enabled": true,
+			"Required": true,
+			"Optional": false
 		}
 	]
 }
