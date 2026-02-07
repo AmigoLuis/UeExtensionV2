@@ -38,7 +38,7 @@ void FSuperManagerModule::StartupModule()
 	
 #pragma region RegisterSettingsForModifyDefaultBlueprintName
 	RegisterSettings();
- 
+	FBlueprintAssetRenameHandler::RegisterBlueprintAssetRenameHandler();
 	// 注册委托
 
 	const FAssetRegistryModule* AssetRegistryModulePtr = LoadModulePtrWithLog<FAssetRegistryModule>("AssetRegistry");
@@ -66,6 +66,7 @@ void FSuperManagerModule::ShutdownModule()
 	{
 		// 取消注册设置
 		UnRegisterSettings();
+		FBlueprintAssetRenameHandler::UnregisterBlueprintAssetRenameHandler();
 		// 取消注册委托
 		if (FModuleManager::Get().IsModuleLoaded("AssetRegistry"))
 		{
@@ -497,7 +498,7 @@ void FSuperManagerModule::SetObjectSelectionLockState(AActor* ActorToSet, const 
 
 void FSuperManagerModule::InitObjectSelection()
 {
-	CHECK_NULL_RETURN(GEditor);
+	CHECK_NULL_RETURN_DISPLAY(GEditor);
 	USelection* UserSelections = GEditor->GetSelectedActors();
 	UserSelections->SelectObjectEvent.AddRaw(this, &FSuperManagerModule::LockOrUnlockObjectSelectionEvent);
 }

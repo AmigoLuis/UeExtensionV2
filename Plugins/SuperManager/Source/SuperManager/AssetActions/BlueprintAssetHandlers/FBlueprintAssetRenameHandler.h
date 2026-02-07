@@ -19,5 +19,5 @@ public:
 	static bool IsBlueprintGeneratedClass(UClass* Class);
 private:
 	// 蓝图信息结构
-	static TWeakObjectPtr<UBPDefaultNameSettings> GetOrNewBPDefaultNameSettingsWeakPtr(); 
+	static TWeakObjectPtr<UBPDefaultNameSettings> GetOrNewBPDefaultNameSettingsWeakPtr();
 };

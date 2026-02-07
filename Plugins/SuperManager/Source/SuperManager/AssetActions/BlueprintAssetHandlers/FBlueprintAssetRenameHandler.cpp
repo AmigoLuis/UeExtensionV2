@@ -121,9 +121,9 @@ bool FBlueprintAssetRenameHandler::IsBlueprintGeneratedClass(UClass* Class)
     return false;
 }
 
+static TWeakObjectPtr<UBPDefaultNameSettings> BPDefaultNameSettingsWeak;
 TWeakObjectPtr<UBPDefaultNameSettings> FBlueprintAssetRenameHandler::GetOrNewBPDefaultNameSettingsWeakPtr()
 {
-    static TWeakObjectPtr<UBPDefaultNameSettings> BPDefaultNameSettingsWeak;
     if (BPDefaultNameSettingsWeak == nullptr)
     {
         const UBPDefaultNameSettings* BPDefaultNameSettingsPtr = GetDefault<UBPDefaultNameSettings>();
@@ -140,7 +140,7 @@ void FBlueprintAssetRenameHandler::RegisterBlueprintAssetRenameHandler()
 
 void FBlueprintAssetRenameHandler::UnregisterBlueprintAssetRenameHandler()
 {
-    GetOrNewBPDefaultNameSettingsWeakPtr().Reset();
+    BPDefaultNameSettingsWeak.Reset();
 }
 
 // 如果是蓝图就处理，返回值表示是否处理过
