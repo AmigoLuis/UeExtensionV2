@@ -592,12 +592,17 @@ void FSuperManagerModule::DeInitSceneOutlinerColumnExtension()
 
 void FSuperManagerModule::OnAssetCreated(const FAssetData& AssetData)
 {	
-	FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(AssetData);
+	// 使用异步方式处理，避免在主线程中同步加载
+	Async(EAsyncExecution::TaskGraphMainThread, [AssetData]()
+	{
+		FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(AssetData);
+	});
+	
 }
 
-void FSuperManagerModule::OnAssetRenamed(const FAssetData& AssetData, const FString& NewName)
+void FSuperManagerModule::OnAssetRenamed(const FAssetData& AssetData, const FString& OldName)
 {
-	PrintInLog(TEXT("AssetRenamed: ") + AssetData.GetFullName() + TEXT(", Asset new name:") + NewName);
+	PrintInLog(TEXT("AssetRenamed: ") + AssetData.GetFullName() + TEXT(", Asset old name:") + OldName);
 }
 
 void FSuperManagerModule::RegisterSettings()

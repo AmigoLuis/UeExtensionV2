@@ -35,6 +35,12 @@ bool FBlueprintAssetRenameHandler::IsBlueprintAsset(const FAssetData& AssetData)
 void FBlueprintAssetRenameHandler::AnalyzeParentClass(const FAssetData& AssetData, 
     UBlueprint* Blueprint, UClass* ParentClass)
 {
+    LOG_ENTER_FUNCTION();
+    if (!IsValid(AssetData.GetAsset()))
+    {
+        PrintInLog(TEXT("Invalid asset: ") + AssetData.AssetName.ToString());
+        return;
+    }
     if (!IsAssetAbleToRename(AssetData))
     {
         PrintInLog(TEXT("Unable to rename asset."));
@@ -140,6 +146,7 @@ void FBlueprintAssetRenameHandler::UnregisterBlueprintAssetRenameHandler()
 // 如果是蓝图就处理，返回值表示是否处理过
 bool FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(const FAssetData& AssetData)
 {
+    LOG_ENTER_FUNCTION();
     if (!GetOrNewBPDefaultNameSettingsWeakPtr()->bEnablePlugin)
     {
         PrintInLogDisplay(TEXT("Plugin not enabled, ") 
@@ -153,7 +160,6 @@ bool FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(const FAssetData& A
     // 判断是否是蓝图，不是蓝图的话直接返回，是蓝图的话，打印蓝图父类信息：是cpp中的类还是蓝图中的类，打印父类名称
     // 资产类名
     const FString AssetClassName = AssetData.AssetClassPath.ToString();
-    LOG_ENTER_FUNCTION();
     PrintInLog(TEXT("资产类型: ") + AssetClassName, Display);
     
     // 判断是否是蓝图
@@ -239,25 +245,27 @@ bool FBlueprintAssetRenameHandler::RenameAssetDerivedFromCPP(const FAssetData& A
     
     for (uint32 SameNameAssetCount = 0; SameNameAssetCount < UMaxIntSuffixValue; ++SameNameAssetCount)
     {
-        // UEditorAssetLibrary::DoesDirectoryHaveAssets的入参路径如果以"/"结尾(即目录)，即使目录下有资产也返回false，所以必须去除结尾的"/"
-        FString NewAssetName = FString::Format(*NamingPattern, 
+        const FString& NewAssetName = FString::Format(*NamingPattern, 
             {{TEXT("Prefix"), BlueprintPrefix},
                 {TEXT("ParentClassName"),ParentClassName},
                 {TEXT("IntSuffix"),SameNameAssetCount}});
-        if (!UEditorAssetLibrary::DoesDirectoryExist(NewAssetName)) continue;
         
+        const FString& NewAssetFullName = AssetData.PackagePath.ToString() + TEXT("/")
+            + NewAssetName + TEXT(".") + NewAssetName;
+        
+        if (UEditorAssetLibrary::DoesAssetExist(NewAssetFullName)) continue;
+        
+        PrintInLog(FString::Format(TEXT("Try to rename asset :{0} to new name :{1}, "
+                                        "asset new path {2} doesn't exist."), 
+            {AssetData.AssetName.ToString(), NewAssetName, NewAssetFullName}));
+        CHECK_NULL_RETURN_VALUE(AssetData.GetAsset(), false);
         UEditorUtilityLibrary::RenameAsset(AssetData.GetAsset(), NewAssetName);
         FixUpRedirectors();
-        // bool bSuccess = ObjectTools::RenameObjects({{ AssetData }, { NewAssetName }});
-        //
-        // if (bSuccess)
-        // {
-        //     UE_LOG(LogTemp, Log, TEXT("Asset renamed to %s"), *NewAssetName);
-        // }
-        // else
-        // {
-        //     UE_LOG(LogTemp, Warning, TEXT("Failed to rename asset %s"), *AssetData.AssetName.ToString());
-        // }
+        if (bShowRenameNotification)
+        {
+            ShowNotifyInfo(TEXT("Blueprint asset renamed, new asset name: ") + NewAssetName);
+        }
+        return true;
     }
     if (bShowRenameNotification)
     {
@@ -265,5 +273,5 @@ bool FBlueprintAssetRenameHandler::RenameAssetDerivedFromCPP(const FAssetData& A
             TEXT("Rename blueprint asset failed, too many same-name assets exit, reached ") 
             SYMBOL_NAME_TEXT(UMaxIntSuffixValue) TEXT(":{0}"), {UMaxIntSuffixValue}));
     }
-    return true;
+    return false;
 }

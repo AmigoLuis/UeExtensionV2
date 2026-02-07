@@ -16,7 +16,7 @@ UBPDefaultNameSettings::UBPDefaultNameSettings()
 	BlueprintPrefix = TEXT("BP_");
 	bShowRenameNotification = true;
 	NamingPattern = TEXT("{Prefix}{ParentClassName}_{IntSuffix}");
-	UMaxIntSuffixValue = UINT32_MAX - 1;
+	UMaxIntSuffixValue = 2048;
 }
 
 

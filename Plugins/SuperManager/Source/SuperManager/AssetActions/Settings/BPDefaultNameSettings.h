@@ -23,27 +23,28 @@ public:
 	bool bEnablePlugin;
 
 	// 默认蓝图名称
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bEnablePlugin"))
 	FString DefaultBlueprintName;
 
 	// 是否使用蓝图前缀
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bEnablePlugin"))
 	bool bUseBlueprintPrefix;
 
 	// 蓝图前缀，一般是BP_
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bUseBlueprintPrefix"))
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", 
+		meta = (EditCondition = "bEnablePlugin && bUseBlueprintPrefix"))
 	FString BlueprintPrefix;
 
 	// 最大的整数后缀（重命名时如果模板里面有IntSuffix，存在重名资产时默认IntSuffix+1再尝试重命名，达到UMaxIntSuffixValue时重命名失败）
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bEnablePlugin"))
 	uint32 UMaxIntSuffixValue;
 	
 	// 命名模式
-	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bEnablePlugin"))
 	FString NamingPattern;
 
 	// 是否显示通知
-	UPROPERTY(Config, EditAnywhere, Category = "Notifications")
+	UPROPERTY(Config, EditAnywhere, Category = "Notifications", meta = (EditCondition = "bEnablePlugin"))
 	bool bShowRenameNotification;
 
 #if WITH_EDITOR

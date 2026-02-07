@@ -65,7 +65,7 @@ private:
 	
 #pragma region Settings
 	void OnAssetCreated(const FAssetData& AssetData);
-	void OnAssetRenamed(const FAssetData& AssetData, const FString& NewName);
+	void OnAssetRenamed(const FAssetData& AssetData, const FString& OldName);
 	// 编辑器委托
 	FDelegateHandle OnAssetCreatedDelegateHandle;
 	FDelegateHandle OnAssetRenamedDelegateHandle;
