@@ -17,6 +17,7 @@ class SUPERMANAGER_API UBPDefaultNameSettings : public UObject
 public:
 	UBPDefaultNameSettings();
 
+	void CopySettingsValues(const UBPDefaultNameSettings* Src);
 	// 是否启用插件
 	UPROPERTY(Config, EditAnywhere, Category = "General")
 	bool bEnablePlugin;
@@ -33,6 +34,10 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules", meta = (EditCondition = "bUseBlueprintPrefix"))
 	FString BlueprintPrefix;
 
+	// 最大的整数后缀（重命名时如果模板里面有IntSuffix，存在重名资产时默认IntSuffix+1再尝试重命名，达到UMaxIntSuffixValue时重命名失败）
+	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
+	uint32 UMaxIntSuffixValue;
+	
 	// 命名模式
 	UPROPERTY(Config, EditAnywhere, Category = "Naming Rules")
 	FString NamingPattern;

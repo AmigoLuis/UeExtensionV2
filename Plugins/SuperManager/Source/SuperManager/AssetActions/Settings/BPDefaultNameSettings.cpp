@@ -3,6 +3,9 @@
 
 #include "BPDefaultNameSettings.h"
 
+#include "CheckAndLogAndReturn.h"
+#include "PrintInLog.h"
+
 
 UBPDefaultNameSettings::UBPDefaultNameSettings()
 {
@@ -12,8 +15,23 @@ UBPDefaultNameSettings::UBPDefaultNameSettings()
 	bUseBlueprintPrefix = true;
 	BlueprintPrefix = TEXT("BP_");
 	bShowRenameNotification = true;
-	NamingPattern = TEXT("{Project}_{BaseName}_{Timestamp}");
+	NamingPattern = TEXT("{Prefix}{ParentClassName}_{IntSuffix}");
+	UMaxIntSuffixValue = UINT32_MAX - 1;
 }
+
+
+void UBPDefaultNameSettings::CopySettingsValues(const UBPDefaultNameSettings* Src)
+{
+	CHECK_NULL_RETURN(Src);
+	bEnablePlugin = Src->bEnablePlugin;
+	DefaultBlueprintName = Src->DefaultBlueprintName;
+	bUseBlueprintPrefix = Src->bUseBlueprintPrefix;
+	BlueprintPrefix = Src->BlueprintPrefix;
+	NamingPattern = Src->NamingPattern;
+	bShowRenameNotification = Src->bShowRenameNotification;
+	UMaxIntSuffixValue = Src->UMaxIntSuffixValue;
+}
+
 
 #if WITH_EDITOR
 void UBPDefaultNameSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

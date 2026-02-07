@@ -2,9 +2,9 @@
 
 #include "CheckAndLogAndReturn.h"
 #include "CustomUtilities.h"
+#include "EditorUtilityLibrary.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "GameFramework/Character.h"
-#include "Kismet2/BlueprintEditorUtils.h"
+#include "../Settings/BPDefaultNameSettings.h"
 
 bool FBlueprintAssetRenameHandler::IsBlueprintAsset(const FAssetData& AssetData)
 {
@@ -32,8 +32,14 @@ bool FBlueprintAssetRenameHandler::IsBlueprintAsset(const FAssetData& AssetData)
     return false;
 }
 
-void FBlueprintAssetRenameHandler::AnalyzeParentClass(UBlueprint* Blueprint, UClass* ParentClass)
+void FBlueprintAssetRenameHandler::AnalyzeParentClass(const FAssetData& AssetData, 
+    UBlueprint* Blueprint, UClass* ParentClass)
 {
+    if (!IsAssetAbleToRename(AssetData))
+    {
+        PrintInLog(TEXT("Unable to rename asset."));
+        return;
+    }
     // 蓝图没有父类（这是ai写的代码，这可能吗。。）
     CHECK_NULL_RETURN(ParentClass);
     
@@ -47,6 +53,7 @@ void FBlueprintAssetRenameHandler::AnalyzeParentClass(UBlueprint* Blueprint, UCl
     if (IsBlueprintGeneratedClass(ParentClass))
     {
         PrintInLogDisplay(TEXT("父类为蓝图类。"));
+        RenameAssetDerivedFromBlueprint(AssetData, ParentClassName);
         {// 这段代码没有啥用，后面可以删除，目前用来看父类的一些信息
 #if 0
             // 获取蓝图生成的类
@@ -65,6 +72,7 @@ void FBlueprintAssetRenameHandler::AnalyzeParentClass(UBlueprint* Blueprint, UCl
     else
     {
         PrintInLogDisplay(TEXT("父类不是蓝图类，假设为C++原生类。"));
+        RenameAssetDerivedFromCPP(AssetData, ParentClassName);
         {
             // 这段代码没有啥用，后面可以删除，目前用来看父类的一些信息
             if (bool HasAnyClassNativeFlags = ParentClass->HasAnyClassFlags(CLASS_Native))
@@ -107,9 +115,37 @@ bool FBlueprintAssetRenameHandler::IsBlueprintGeneratedClass(UClass* Class)
     return false;
 }
 
+TWeakObjectPtr<UBPDefaultNameSettings> FBlueprintAssetRenameHandler::GetOrNewBPDefaultNameSettingsWeakPtr()
+{
+    static TWeakObjectPtr<UBPDefaultNameSettings> BPDefaultNameSettingsWeak;
+    if (BPDefaultNameSettingsWeak == nullptr)
+    {
+        const UBPDefaultNameSettings* BPDefaultNameSettingsPtr = GetDefault<UBPDefaultNameSettings>();
+        CHECK_NULL_RETURN_VALUE(BPDefaultNameSettingsPtr, BPDefaultNameSettingsWeak);
+        BPDefaultNameSettingsWeak = NewObject<UBPDefaultNameSettings>();
+        BPDefaultNameSettingsWeak->CopySettingsValues(BPDefaultNameSettingsPtr);
+    }
+    return BPDefaultNameSettingsWeak;
+}
+
+void FBlueprintAssetRenameHandler::RegisterBlueprintAssetRenameHandler()
+{
+}
+
+void FBlueprintAssetRenameHandler::UnregisterBlueprintAssetRenameHandler()
+{
+    GetOrNewBPDefaultNameSettingsWeakPtr().Reset();
+}
+
 // 如果是蓝图就处理，返回值表示是否处理过
 bool FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(const FAssetData& AssetData)
 {
+    if (!GetOrNewBPDefaultNameSettingsWeakPtr()->bEnablePlugin)
+    {
+        PrintInLogDisplay(TEXT("Plugin not enabled, ") 
+            TEXT(__FUNCTION__) TEXT(" ignored."));
+        return false;
+    }
     constexpr bool bAssetNotProcessed = false;
     constexpr bool bAssetProcessed = true;
     // 打印资产路径
@@ -151,7 +187,7 @@ bool FBlueprintAssetRenameHandler::ProcessAssetIfIsBlueprint(const FAssetData& A
     CHECK_NULL_RETURN_VALUE(ParentClass, bAssetProcessed);
     
     // 分析父类信息
-    AnalyzeParentClass(Blueprint, ParentClass);
+    AnalyzeParentClass(AssetData, Blueprint, ParentClass);
     return bAssetProcessed;
 }
 
@@ -178,4 +214,56 @@ void FBlueprintAssetRenameHandler::AnalyzeAllBlueprintsInPath(const FString& Pat
 	{
 		// OnAssetCreated(AssetData);
 	}
+}
+
+bool FBlueprintAssetRenameHandler::IsAssetAbleToRename(const FAssetData& AssetData)
+{
+    // 如果蓝图资产是以默认的蓝图名称开头，则可重命名资产
+    const FString AssetName = AssetData.AssetName.ToString();
+    return AssetName.StartsWith(GetOrNewBPDefaultNameSettingsWeakPtr()->DefaultBlueprintName);
+}
+
+bool FBlueprintAssetRenameHandler::RenameAssetDerivedFromBlueprint(const FAssetData& AssetData, const FString& ParentClassName)
+{
+    return RenameAssetDerivedFromCPP(AssetData, ParentClassName);
+}
+
+bool FBlueprintAssetRenameHandler::RenameAssetDerivedFromCPP(const FAssetData& AssetData, const FString& ParentClassName)
+{
+    const auto bUseBlueprintPrefix = GetOrNewBPDefaultNameSettingsWeakPtr()->bUseBlueprintPrefix;
+    const auto& BlueprintPrefix = 
+        bUseBlueprintPrefix ? GetOrNewBPDefaultNameSettingsWeakPtr()->BlueprintPrefix : FString();
+    const auto bShowRenameNotification = GetOrNewBPDefaultNameSettingsWeakPtr()->bShowRenameNotification;
+    const auto& NamingPattern = GetOrNewBPDefaultNameSettingsWeakPtr()->NamingPattern;
+    const auto UMaxIntSuffixValue = GetOrNewBPDefaultNameSettingsWeakPtr()->UMaxIntSuffixValue;
+    
+    for (uint32 SameNameAssetCount = 0; SameNameAssetCount < UMaxIntSuffixValue; ++SameNameAssetCount)
+    {
+        // UEditorAssetLibrary::DoesDirectoryHaveAssets的入参路径如果以"/"结尾(即目录)，即使目录下有资产也返回false，所以必须去除结尾的"/"
+        FString NewAssetName = FString::Format(*NamingPattern, 
+            {{TEXT("Prefix"), BlueprintPrefix},
+                {TEXT("ParentClassName"),ParentClassName},
+                {TEXT("IntSuffix"),SameNameAssetCount}});
+        if (!UEditorAssetLibrary::DoesDirectoryExist(NewAssetName)) continue;
+        
+        UEditorUtilityLibrary::RenameAsset(AssetData.GetAsset(), NewAssetName);
+        FixUpRedirectors();
+        // bool bSuccess = ObjectTools::RenameObjects({{ AssetData }, { NewAssetName }});
+        //
+        // if (bSuccess)
+        // {
+        //     UE_LOG(LogTemp, Log, TEXT("Asset renamed to %s"), *NewAssetName);
+        // }
+        // else
+        // {
+        //     UE_LOG(LogTemp, Warning, TEXT("Failed to rename asset %s"), *AssetData.AssetName.ToString());
+        // }
+    }
+    if (bShowRenameNotification)
+    {
+        ShowMessageDialog(FString::Format(
+            TEXT("Rename blueprint asset failed, too many same-name assets exit, reached ") 
+            SYMBOL_NAME_TEXT(UMaxIntSuffixValue) TEXT(":{0}"), {UMaxIntSuffixValue}));
+    }
+    return true;
 }
